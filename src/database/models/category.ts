@@ -18,4 +18,4 @@ const categorySchema  = new Schema<ICategoryType>({
     },
 
 })
-export const Category= mongoose.modelNames.Category || mongoose.model('Category',categorySchema);
+export const Category = mongoose.models.Category || mongoose.model("Category", categorySchema);
