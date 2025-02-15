@@ -1,7 +1,10 @@
 import { createConnection } from '@/database/db';
 import { Category } from '@/database/models/category';
 import { data } from 'react-router';
+import authMiddleware from '../../../../middleware/auth.middleware';
+import { NextRequest } from 'next/server';
 export async function createCategory(req: Request) {
+    const response= await authMiddleware(req as NextRequest);
     await createConnection();
     const{name,description}= await req.json();
     const existingCategory = await Category.findOne({ name });
