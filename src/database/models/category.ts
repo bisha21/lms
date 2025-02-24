@@ -1,5 +1,6 @@
 import mongoose, { Schema } from "mongoose"
  interface ICategoryType extends Document  {
+    
     name: string,
     description: string,
     createdAt: Date,
@@ -18,4 +19,4 @@ const categorySchema  = new Schema<ICategoryType>({
     },
 
 })
-export const Category= mongoose.modelNames.Category || mongoose.model('Category',categorySchema);
+export const Category = mongoose.models.Category || mongoose.model("Category", categorySchema);
