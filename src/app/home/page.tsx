@@ -8,7 +8,7 @@ export default function Home() {
     return (
       <>
         Welcome  {session.user?.name} to our Lms<br />
-        <p>your email: {session.user?.email}</p>
+        <p className=''>your email: {session.user?.email}</p>
         <Image src={session.user?.image || '/vercel.svg'} alt="Vercel Logo" width={100} height={24} />
         <button onClick={() => signOut()}>Sign out</button>
       </>

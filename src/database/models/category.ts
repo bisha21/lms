@@ -1,5 +1,6 @@
 import mongoose, { Schema } from "mongoose"
  interface ICategoryType extends Document  {
+    
     name: string,
     description: string,
     createdAt: Date,
