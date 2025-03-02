@@ -27,14 +27,14 @@ const courseSchema= new Schema({
         type:String,
         required:true
     },
-    categoryId:{
+    category:{
         type:Schema.Types.ObjectId,
         ref:"Category"
     },
-    lessonId:[{
-        type:Schema.Types.ObjectId,
-        ref:"Lesson"
-    }],
+    // lessonId:[{
+    //     type:Schema.Types.ObjectId,
+    //     ref:"Lesson"
+    // }],
     createdAt : {
         type : Date, 
         default : Date.now()

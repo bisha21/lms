@@ -1,13 +1,13 @@
 import mongoose, { Schema } from "mongoose";
 
-interface ILession extends Document{
+ export interface ILesson extends Document{
     course: mongoose.Types.ObjectId;
     title: string;
     description: string;
     videoUrl: string;
     createdAt:Date
 }
-const lessionSchema = new Schema<ILession>({
+const lessonSchema = new Schema<ILesson>({
     course: {
         type: Schema.Types.ObjectId,
         ref: "Course",
@@ -29,4 +29,4 @@ const lessionSchema = new Schema<ILession>({
         default : Date.now()
     }
 })
-export const Lession = mongoose.models.Lession || mongoose.model('Lession',lessionSchema);
+export const Lesson = mongoose.models.Lesson || mongoose.model('Lesson',lessonSchema);
