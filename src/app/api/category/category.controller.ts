@@ -2,11 +2,14 @@ import { createConnection } from '@/database/db';
 import { Category } from '@/database/models/category';
 import authMiddleware from '../../../../middleware/auth.middleware';
 import { NextRequest, NextResponse } from 'next/server';
-import { NextApiRequest } from 'next';
 export async function createCategory(req: Request) {
   await createConnection();
+  const response = await authMiddleware(req as NextRequest);
+  if (response.status === 401) {
+    // If unauthorized, return early
+    return response;
+  }
   const { name, description } = await req.json();
-  console.log('Hitt');
   const existingCategory = await Category.findOne({ name });
   if (existingCategory) {
     return Response.json(
@@ -16,10 +19,7 @@ export async function createCategory(req: Request) {
   }
   try {
     const newCategory = await Category.create({ name, description });
-    return Response.json(
-      { data: newCategory },
-      { status: 201 }
-    );
+    return Response.json({ data: newCategory }, { status: 201 });
   } catch (err) {
     console.log(err.messaage);
 
@@ -71,9 +71,17 @@ export async function deleteCategory(id: string) {
   }
 }
 
-export async function updateCategory(id: string, name: string, description: string) {
+export async function updateCategory(
+  id: string,
+  name: string,
+  description: string
+) {
   try {
-    const category = await Category.findByIdAndUpdate(id, { name, description }, { new: true });
+    const category = await Category.findByIdAndUpdate(
+      id,
+      { name, description },
+      { new: true }
+    );
     if (!category) {
       return NextResponse.json(
         { message: 'Category not found' },

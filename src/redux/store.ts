@@ -1,12 +1,14 @@
 import { configureStore } from '@reduxjs/toolkit'
 import categorySlice from './category/categorySlice'
 import modalSlice from  './modal/modalSlice'
+import courseSlice from './courses/coursesSlice'
 
 export const makeStore = () => {
   return configureStore({
     reducer: {
       modal:modalSlice,
-      categores:categorySlice
+      categores:categorySlice,
+      courses:courseSlice
     },
   })
 }

@@ -1,6 +1,6 @@
 import { createConnection } from '@/database/db';
 import { Course } from '@/database/models/course.schema';
-import { Lession } from '@/database/models/lession';
+import { Lesson } from '@/database/models/lesson';
 import { NextResponse } from 'next/server';
 
 export async function creatCourse(req: Request) {
@@ -36,16 +36,23 @@ export async function creatCourse(req: Request) {
 
 export const getAllCourses = async () => {
   try {
-    const courses = await Course.find().populate('categoryId');
-    if (courses.length === 0) {
-      return NextResponse.json({ message: 'No courses found' });
+    // Fetching courses and populating the categoryId
+    const data = await Course.find().populate('category'); // return array []
+    if (data.length === 0) {
+      return NextResponse.json(
+        { message: 'No courses found' },
+        { status: 404 }
+      ); // Change to 404 if no courses found
     }
-    return NextResponse.json({ data: courses }, { status: 200 });
+
+    // Returning the list of courses with a success status
+    return NextResponse.json({ data: data }, { status: 200 });
   } catch (error) {
-    console.log('Something went wrong', error.message);
-    return Response.json(
+    console.error('Something went wrong:', error.message); // Log the error for debugging
+    return NextResponse.json(
       {
-        message: 'Something went wrong',
+        message: 'Something went wrong while fetching courses.',
+        error: error.message, // Optionally, include error message for debugging
       },
       { status: 500 }
     );
@@ -54,7 +61,7 @@ export const getAllCourses = async () => {
 
 export const getCourseById = async (id: string) => {
   try {
-    const course = await Course.findById(id).populate('categoryId');
+    const course = await Course.findById(id).populate('category');
     if (!course) {
       return NextResponse.json({ message: 'No course found' });
     }
@@ -74,7 +81,7 @@ export const deleteCourse = async (id: string) => {
   try {
     createConnection();
     await Course.findByIdAndDelete(id);
-    await Lession.deleteMany({ course: id });
+    await Lesson.deleteMany({ course: id });
     return NextResponse.json(
       { message: 'Course deleted successfully' },
       { status: 200 }
@@ -90,8 +97,7 @@ export const deleteCourse = async (id: string) => {
   }
 };
 
-export const updateCourse = async (id: string, req: Request) => {
-  const data = await req.json();
+export const updateCourse = async (id: string, data) => {
   try {
     createConnection();
     const course = await Course.findByIdAndUpdate(

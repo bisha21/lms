@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'react-toastify';
 import { useAppDispatch } from '../redux/hooks';
 import { createCategory, updateCategory } from '@/redux/category/categorySlice';
-import { setIsOpen } from '@/redux/modal/modalSlice';
+import { closeModal } from '@/redux/modal/modalSlice'; // Import global modal actions
 
 interface FormProps {
   defaultValues?: { _id: string; name: string; description: string };
@@ -37,9 +37,10 @@ const Form: React.FC<FormProps> = ({ defaultValues }) => {
         await dispatch(createCategory(data));
         toast.success('Category created successfully');
       }
+
       setName('');
       setDescription('');
-      dispatch(setIsOpen(false));
+      dispatch(closeModal()); // Close modal globally
     } catch (err) {
       console.log('Error', err);
       toast.error(

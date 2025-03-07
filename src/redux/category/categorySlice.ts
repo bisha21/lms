@@ -3,6 +3,7 @@ import { ICategory, ICategoryInitalState, Status } from './type';
 import { AppDispatch } from '../store';
 import axios from 'axios';
 import { API } from '@/http/http';
+import { toast } from 'react-toastify';
 
 const initialState: ICategoryInitalState = {
   categories: [],
@@ -75,6 +76,10 @@ export function createCategory(categoryData: {
       if (response.status === 201) {
         dispatch(setStatus(Status.SUCCESS));
         dispatch(setAddCategory(response.data.data));
+      }
+      if (response.status === 401) {
+        dispatch(setStatus(Status.ERROR));
+        toast.error('Unauthorized');
       }
     } catch (error) {
       console.log(error);
