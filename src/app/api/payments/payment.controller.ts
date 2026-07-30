@@ -5,7 +5,7 @@ import { Payment, PaymentStatus } from '@/database/models/payment.model';
 import { NextResponse } from 'next/server';
 import { AppError } from '@/lib/appError';
 import { checkoutSchema } from '@/lib/validate/payment.schema';
-import { stripe } from '@/lib/stripe';
+import { getStripe } from '@/lib/stripe';
 import { requireAuth } from '../../../../middleware/auth.middleware';
 import type Stripe from 'stripe';
 
@@ -37,6 +37,7 @@ export async function createCheckoutSession(req: Request) {
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+  const stripe = getStripe();
 
   const checkoutSession = await stripe.checkout.sessions.create({
     mode: 'payment',
@@ -71,6 +72,7 @@ export async function handleWebhook(req: Request) {
     throw new AppError('Missing stripe-signature header', 400);
   }
 
+  const stripe = getStripe();
   let event: Stripe.Event;
   try {
     event = stripe.webhooks.constructEvent(

@@ -3,8 +3,9 @@ import { getCourseBySlug } from '../../course.Controller';
 import { withErrorHandling } from '@/lib/catchAsync';
 
 export const GET = withErrorHandling(
-  async (req: Request, { params }: { params: { slug: string } }) => {
+  async (req: Request, { params }: { params: Promise<{ slug: string }> }) => {
     await createConnection();
-    return getCourseBySlug(params.slug);
+    const { slug } = await params;
+    return getCourseBySlug(slug);
   }
 );

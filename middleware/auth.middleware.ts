@@ -1,6 +1,4 @@
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-// @ts-expect-error - next-auth v4's type declarations don't resolve this named export
-// under this project's moduleResolution, though it exists at runtime.
+import { authOptions } from '@/lib/auth';
 import { getServerSession, Session } from 'next-auth';
 import { NextRequest, NextResponse } from 'next/server';
 import { AppError } from '@/lib/appError';

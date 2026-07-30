@@ -3,10 +3,8 @@ import Course, { CourseStatus } from '@/database/models/course.schema';
 import { Lesson } from '@/database/models/lesson';
 import { Enrollment } from '@/database/models/enrollment.model';
 import { NextResponse } from 'next/server';
-// @ts-expect-error - next-auth v4's type declarations don't resolve this named export
-// under this project's moduleResolution, though it exists at runtime.
 import { getServerSession, Session } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 import { AppError } from '@/lib/appError';
 import { createCourseSchema, updateCourseSchema } from '@/lib/validate/course.schema';
 import { requireAuth } from '../../../../middleware/auth.middleware';

@@ -3,22 +3,25 @@ import { deleteCourse, getCourseById, updateCourse } from '../course.Controller'
 import { withErrorHandling } from '@/lib/catchAsync';
 
 export const DELETE = withErrorHandling(
-  async (req: Request, { params }: { params: { id: string } }) => {
+  async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
     await createConnection();
-    return deleteCourse(params.id);
+    const { id } = await params;
+    return deleteCourse(id);
   }
 );
 
 export const PATCH = withErrorHandling(
-  async (req: Request, { params }: { params: { id: string } }) => {
+  async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
     await createConnection();
-    return updateCourse(req, params.id);
+    const { id } = await params;
+    return updateCourse(req, id);
   }
 );
 
 export const GET = withErrorHandling(
-  async (req: Request, { params }: { params: { id: string } }) => {
+  async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
     await createConnection();
-    return getCourseById(params.id);
+    const { id } = await params;
+    return getCourseById(id);
   }
 );

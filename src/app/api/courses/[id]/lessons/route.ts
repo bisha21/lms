@@ -4,14 +4,16 @@ import { createLessonForCourse } from '@/app/api/lessons/lesson.controller';
 import { withErrorHandling } from '@/lib/catchAsync';
 
 export const GET = withErrorHandling(
-  async (req: Request, { params }: { params: { id: string } }) => {
+  async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
     await createConnection();
-    return getCourseLessons(params.id);
+    const { id } = await params;
+    return getCourseLessons(id);
   }
 );
 
 export const POST = withErrorHandling(
-  async (req: Request, { params }: { params: { id: string } }) => {
-    return createLessonForCourse(req, params.id);
+  async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
+    const { id } = await params;
+    return createLessonForCourse(req, id);
   }
 );

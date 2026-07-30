@@ -1,7 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { ICategory, ICategoryInitalState, Status } from './type';
+import { ICategoryInitalState, Status } from './type';
 import { AppDispatch } from '../store';
-import axios from 'axios';
 import { API } from '@/http/http';
 import { toast } from 'react-toastify';
 

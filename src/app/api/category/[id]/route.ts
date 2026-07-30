@@ -3,22 +3,25 @@ import { deleteCategory, getSingleCategory, updateCategory } from '../category.c
 import { withErrorHandling } from '@/lib/catchAsync';
 
 export const DELETE = withErrorHandling(
-  async (req: Request, { params }: { params: { id: string } }) => {
+  async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
     await createConnection();
-    return deleteCategory(req, params.id);
+    const { id } = await params;
+    return deleteCategory(req, id);
   }
 );
 
 export const PATCH = withErrorHandling(
-  async (req: Request, { params }: { params: { id: string } }) => {
+  async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
     await createConnection();
-    return updateCategory(req, params.id);
+    const { id } = await params;
+    return updateCategory(req, id);
   }
 );
 
 export const GET = withErrorHandling(
-  async (req: Request, { params }: { params: { id: string } }) => {
+  async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
     await createConnection();
-    return getSingleCategory(params.id);
+    const { id } = await params;
+    return getSingleCategory(id);
   }
 );

@@ -4,8 +4,9 @@ import { withErrorHandling } from '@/lib/catchAsync';
 export const PATCH = withErrorHandling(
   async (
     req: Request,
-    { params }: { params: { courseId: string; lessonId: string } }
+    { params }: { params: Promise<{ courseId: string; lessonId: string }> }
   ) => {
-    return markLessonComplete(params.courseId, params.lessonId);
+    const { courseId, lessonId } = await params;
+    return markLessonComplete(courseId, lessonId);
   }
 );
