@@ -1,7 +1,9 @@
 import { createConnection } from '@/database/db';
-import { Course } from '@/database/models/course.schema';
+import Course from '@/database/models/course.schema';
 import { Lesson } from '@/database/models/lesson';
+import mongoose from 'mongoose';
 import { NextResponse } from 'next/server';
+import Category from '@/database/models/category';
 
 export async function creatCourse(req: Request) {
   createConnection();
@@ -36,23 +38,30 @@ export async function creatCourse(req: Request) {
 
 export const getAllCourses = async () => {
   try {
-    // Fetching courses and populating the categoryId
-    const data = await Course.find().populate('category'); // return array []
-    if (data.length === 0) {
-      return NextResponse.json(
-        { message: 'No courses found' },
-        { status: 404 }
-      ); // Change to 404 if no courses found
-    }
+    await createConnection();
+    console.log(mongoose.models.Category, 'MMC');
+    const data = await Course.find().populate('category');
 
-    // Returning the list of courses with a success status
-    return NextResponse.json({ data: data }, { status: 200 });
-  } catch (error) {
-    console.error('Something went wrong:', error.message); // Log the error for debugging
-    return NextResponse.json(
+    if (data.length === 0) {
+      return Response.json(
+        {
+          message: 'no course found',
+        },
+        { status: 404 }
+      );
+    }
+    return Response.json(
       {
-        message: 'Something went wrong while fetching courses.',
-        error: error.message, // Optionally, include error message for debugging
+        message: 'courses fetched!!',
+        data,
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.log(error);
+    return Response.json(
+      {
+        message: 'Something went wrong mm',
       },
       { status: 500 }
     );

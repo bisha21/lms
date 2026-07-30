@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { unique } from 'next/dist/build/utils';
+import { Category } from './category';
 interface Course extends Document {
   title: string;
   courseDescription: string;
@@ -10,39 +10,36 @@ interface Course extends Document {
   createdAt: Date;
 }
 const Schema = mongoose.Schema;
-const courseSchema = new Schema(
-  {
-    title: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    courseDescription: {
-      type: String,
-      required: true,
-    },
-    coursePrice: {
-      type: Number,
-    },
-    duration: {
-      type: String,
-      required: true,
-    },
-    categoryId: {
-      type: Schema.Types.ObjectId,
-      ref: 'Category',
-    },
-    // lessonId:[{
-    //     type:Schema.Types.ObjectId,
-    //     ref:"Lesson"
-    // }],
-    createdAt: {
-      type: Date,
-      default: Date.now(),
-    },
+const courseSchema = new Schema({
+  title: {
+    type: String,
+    required: true,
+    unique: true,
   },
-  { strictPopulate: false }
-);
+  courseDescription: {
+    type: String,
+    required: true,
+  },
+  coursePrice: {
+    type: Number,
+  },
+  duration: {
+    type: String,
+    required: true,
+  },
+  category: {
+    type: Schema.Types.ObjectId,
+    ref: 'Category',
+  },
+  // lessonId:[{
+  //     type:Schema.Types.ObjectId,
+  //     ref:"Lesson"
+  // }],
+  createdAt: {
+    type: Date,
+    default: Date.now(),
+  },
+});
 
-export const Course =
-  mongoose.models.Course || mongoose.model('Course', courseSchema);
+const Course = mongoose.models.Course || mongoose.model('Course', courseSchema);
+export default Course;

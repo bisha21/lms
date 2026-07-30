@@ -1,5 +1,5 @@
 import { createConnection } from '@/database/db';
-import { Category } from '@/database/models/category';
+import Category  from '@/database/models/category';
 import authMiddleware from '../../../../middleware/auth.middleware';
 import { NextRequest, NextResponse } from 'next/server';
 export async function createCategory(req: Request) {
@@ -98,3 +98,25 @@ export async function updateCategory(
     return NextResponse.json({ message: 'Server error' }, { status: 500 });
   }
 }
+
+
+export async function getSingleCategory(id:string){
+  try{
+    const category = await Category.findById(id);
+    if(!category){
+      return NextResponse.json(
+        { message: 'Category not found' },
+        { status: 404 }
+        );
+        }
+        return NextResponse.json(
+          { message: 'Category found successfully', data: category },
+          { status: 200 }
+          );
+          } catch (err) {
+            console.log(err);
+            // Return a proper error response
+            return NextResponse.json({ message: 'Server error' }, { status: 500 });
+            }
+  }
+
