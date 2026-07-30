@@ -1,33 +1,37 @@
 import { Button } from '@/components/ui/button';
 import { fetchCategories } from '@/redux/category/categorySlice';
-import { Status } from '@/redux/category/type';
 import { createCourse, updateCourse } from '@/redux/courses/coursesSlice';
 import { ICourseForData } from '@/redux/courses/type';
 import { useAppDispatch, useAppSelector } from '@/redux/hooks';
-import { ChangeEvent, useEffect, useState } from 'react';
-import { toast } from 'react-toastify';
+import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
 
 interface CourseFormProps {
   defaultValues?: ICourseForData; // Accept default values
 }
 
+const emptyForm: ICourseForData = {
+  title: '',
+  courseDescription: '',
+  coursePrice: 0,
+  category: '',
+  duration: '',
+  thumbnail: '',
+};
+
 const CourseForm: React.FC<CourseFormProps> = ({ defaultValues }) => {
   const dispatch = useAppDispatch();
-  const { status } = useAppSelector((store) => store.courses);
   const { categories } = useAppSelector((store) => store.categores);
-  const [data, setData] = useState<ICourseForData>({
-    title: '',
-    courseDescription: '',
-    coursePrice: 0,
-    category: '',
-    duration: '',
-  });
+  const [data, setData] = useState<ICourseForData>(emptyForm);
 
-  // Set default values if provided
   useEffect(() => {
     if (defaultValues) {
-        console.log("hahaha",defaultValues._id)
-      setData(defaultValues);
+      setData({
+        ...defaultValues,
+        category:
+          typeof defaultValues.category === 'string'
+            ? defaultValues.category
+            : defaultValues.category?._id ?? '',
+      });
     }
   }, [defaultValues]);
 
@@ -37,7 +41,7 @@ const CourseForm: React.FC<CourseFormProps> = ({ defaultValues }) => {
     const { name, value } = e.target;
     setData({
       ...data,
-      [name]: value,
+      [name]: name === 'coursePrice' ? Number(value) : value,
     });
   };
 
@@ -45,27 +49,16 @@ const CourseForm: React.FC<CourseFormProps> = ({ defaultValues }) => {
     if (categories.length === 0) {
       dispatch(fetchCategories());
     }
-  }, [dispatch]);
+  }, [dispatch, categories.length]);
 
-  const createCourseHandle = (e: ChangeEvent<HTMLFormElement>) => {
+  const createCourseHandle = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (defaultValues) {
-        
-      dispatch(updateCourse(data,defaultValues._id));
+    if (defaultValues?._id) {
+      dispatch(updateCourse(data, defaultValues._id));
     } else {
       dispatch(createCourse(data));
     }
   };
-
-  //   useEffect(() => {
-  //     if (status === Status.SUCCESS) {
-  //       const message = defaultValues
-  //         ? 'Course updated successfully'
-  //         : 'Course created successfully';
-
-  //       toast.success(message);
-  //     }
-  //   }, [status, defaultValues]);
 
   return (
     <div className="space-y-4">
@@ -84,8 +77,8 @@ const CourseForm: React.FC<CourseFormProps> = ({ defaultValues }) => {
             required
           />
         </div>
-        <div className="flex justify-between">
-          <div>
+        <div className="flex justify-between gap-4">
+          <div className="flex-1">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Course Price
             </label>
@@ -93,13 +86,14 @@ const CourseForm: React.FC<CourseFormProps> = ({ defaultValues }) => {
               onChange={handleChange}
               name="coursePrice"
               type="number"
+              min={0}
               value={data.coursePrice}
               className="w-full mt-1 p-2 border border-gray-300 dark:border-gray-600 rounded-md"
               placeholder="999"
               required
             />
           </div>
-          <div>
+          <div className="flex-1">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Course Duration
             </label>
@@ -121,18 +115,30 @@ const CourseForm: React.FC<CourseFormProps> = ({ defaultValues }) => {
           <select
             name="category"
             onChange={handleChange}
-            value={data.category}
+            value={data.category as string}
             className="w-full mt-1 p-2 border border-gray-300 dark:border-gray-600 rounded-md"
             required
           >
             <option value="">Select Category</option>
-            {categories.length &&
-              categories.map((category) => (
-                <option key={category._id} value={category._id}>
-                  {category.name}
-                </option>
-              ))}
+            {categories.map((category) => (
+              <option key={category._id} value={category._id}>
+                {category.name}
+              </option>
+            ))}
           </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Thumbnail URL
+          </label>
+          <input
+            onChange={handleChange}
+            name="thumbnail"
+            type="text"
+            value={data.thumbnail ?? ''}
+            className="w-full mt-1 p-2 border border-gray-300 dark:border-gray-600 rounded-md"
+            placeholder="https://..."
+          />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -152,7 +158,7 @@ const CourseForm: React.FC<CourseFormProps> = ({ defaultValues }) => {
             Cancel
           </Button>
           <Button type="submit">
-            {defaultValues ? 'Update Courses' : 'Add Course'}
+            {defaultValues?._id ? 'Update Courses' : 'Add Course'}
           </Button>
         </div>
       </form>

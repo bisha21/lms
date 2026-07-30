@@ -3,6 +3,7 @@ import User from '@/database/models/user.schema';
 import NextAuth, { Session } from 'next-auth';
 import {} from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
+import CredentialsProvider from 'next-auth/providers/credentials';
 
 interface IToken {
   name: string;
@@ -18,6 +19,29 @@ export const authOptions: AuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID as string,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+    }),
+    CredentialsProvider({
+      name: 'Credentials',
+      credentials: {
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          return null;
+        }
+        await createConnection();
+        const user = await User.findOne({ email: credentials.email }).select('+password');
+        if (!user || !(await user.comparePassword(credentials.password))) {
+          return null;
+        }
+        return {
+          id: user._id.toString(),
+          name: user.username,
+          email: user.email,
+          image: user.profileImage,
+        };
+      },
     }),
   ],
   secret: process.env.NEXTAUTH_SECRET,
