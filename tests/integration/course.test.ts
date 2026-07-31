@@ -5,11 +5,13 @@ import Category from '@/database/models/category';
 import Course from '@/database/models/course.schema';
 import { Lesson } from '@/database/models/lesson';
 import { Section } from '@/database/models/section';
+import User from '@/database/models/user.schema';
 import {
   createCourse,
   deleteCourse,
   getAllCourses,
   getCourseById,
+  getCourseBySlug,
   getCourseLessons,
   updateCourse,
 } from '@/app/api/courses/course.Controller';
@@ -164,6 +166,66 @@ describe('course controller — role & ownership matrix', () => {
       updateCourse(jsonRequest({ title: 'Hijacked' }), course._id.toString()),
     ).rejects.toMatchObject({ statusCode: 403 });
     await expect(deleteCourse(course._id.toString())).rejects.toMatchObject({ statusCode: 403 });
+  });
+});
+
+describe('getCourseBySlug — public detail page never exposes protected data', () => {
+  beforeEach(async () => {
+    await createConnection();
+  });
+
+  it('never includes a lesson videoUrl, for an anonymous visitor', async () => {
+    const course = await createPublishedCourse();
+    const section = await Section.create({ course: course._id, title: 'Section 1', order: 0 });
+    const secretVideoUrl = 'https://cdn.example.com/super-secret-lesson-video.mp4';
+    await Lesson.create({
+      course: course._id,
+      section: section._id,
+      title: 'Locked Lesson',
+      description: 'desc',
+      videoUrl: secretVideoUrl,
+      order: 0,
+    });
+
+    mockGetServerSession.mockResolvedValue(null); // anonymous — not enrolled, not the owner
+
+    const response = await getCourseBySlug(course.slug);
+    const body = await response.json();
+
+    expect(body.data.lessons).toHaveLength(1);
+    expect(body.data.lessons[0]).not.toHaveProperty('videoUrl');
+    const serialized = JSON.stringify(body);
+    expect(serialized).not.toContain(secretVideoUrl);
+    expect(serialized).not.toContain('super-secret-lesson-video');
+  });
+
+  it('whitelists the populated instructor to {username, profileImage} — no password/email leak', async () => {
+    const instructor = await User.create({
+      username: 'Jane Instructor',
+      email: 'jane@example.com',
+      password: 'super-secret-hash',
+    });
+    const course = await createPublishedCourse({ title: 'Course With Instructor', instructor: instructor._id });
+    mockGetServerSession.mockResolvedValue(null);
+
+    const response = await getCourseBySlug(course.slug);
+    const body = await response.json();
+
+    expect(body.data.course.instructor.username).toBe('Jane Instructor');
+    const serialized = JSON.stringify(body);
+    expect(serialized).not.toContain('super-secret-hash');
+    expect(serialized).not.toContain('jane@example.com');
+  });
+
+  it('returns a null average rating and zero count for a course with no reviews', async () => {
+    const course = await createPublishedCourse();
+    mockGetServerSession.mockResolvedValue(null);
+
+    const response = await getCourseBySlug(course.slug);
+    const body = await response.json();
+
+    expect(body.data.averageRating).toBeNull();
+    expect(body.data.reviewCount).toBe(0);
   });
 });
 
