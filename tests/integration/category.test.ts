@@ -18,15 +18,28 @@ describe('category controller', () => {
     await createConnection();
   });
 
-  it('rejects creation without an admin session', async () => {
+  it('rejects creation with no session at all (401)', async () => {
     mockGetServerSession.mockResolvedValue(null);
 
-    const response = await createCategory(postRequest({ name: 'Web Development' }));
-    expect(response.status).toBe(401);
+    await expect(createCategory(postRequest({ name: 'Web Development' }))).rejects.toMatchObject({
+      statusCode: 401,
+    });
   });
 
-  it('creates a category and auto-generates its slug', async () => {
-    mockGetServerSession.mockResolvedValue({ user: { id: 'admin-1', role: 'admin' } });
+  it.each([['instructor'], ['student']])(
+    'rejects creation for an authenticated %s (403, not 401 or a filtered 200)',
+    async (role) => {
+      mockGetServerSession.mockResolvedValue({ user: { id: 'user-1', role } });
+
+      await expect(createCategory(postRequest({ name: 'Web Development' }))).rejects.toMatchObject({
+        statusCode: 403,
+      });
+      expect(await Category.countDocuments({})).toBe(0);
+    },
+  );
+
+  it.each([['super_admin'], ['admin']])('creates a category and auto-generates its slug as %s', async (role) => {
+    mockGetServerSession.mockResolvedValue({ user: { id: 'admin-1', role } });
 
     const response = await createCategory(postRequest({ name: 'Web Development' }));
     expect(response.status).toBe(201);
