@@ -1,12 +1,13 @@
 import { configureStore } from '@reduxjs/toolkit'
-import categorySlice from './category/categorySlice'
-import modalSlice from  './modal/modalSlice'
+import modalSlice from './modal/modalSlice'
 
+// Server-state (courses, categories, enrollments, lessons, payments, progress) now
+// lives in TanStack Query — see src/features/*/hooks.ts and src/app/Providers.tsx.
+// Redux is kept only for UI-only shared state (the cross-page modal controller).
 export const makeStore = () => {
   return configureStore({
     reducer: {
-      modal:modalSlice,
-      categores:categorySlice
+      modal: modalSlice,
     },
   })
 }

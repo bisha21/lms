@@ -3,43 +3,20 @@ import Form from '@/_component/Form';
 import Modal from '@/_component/Modal';
 import { Button } from '@/components/ui/button';
 import { Pencil, Trash } from 'lucide-react';
-import { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/redux/hooks';
-import {
-  deleteCategory,
-  fetchCategories,
-} from '@/redux/category/categorySlice';
-import { toast } from 'react-toastify';
-import { setIsOpen } from '@/redux/modal/modalSlice';
-
-interface ICategories {
-  _id: string;
-  name: string;
-  description: string;
-}
+import { openModal, closeModal } from '@/redux/modal/modalSlice';
+import { useCategories, useDeleteCategory } from '@/features/categories/hooks';
 
 const Categories = () => {
-  const [isDeleteModal, setIsDeleteModal] = useState(false);
-  const [deleteId, setDeleteId] = useState('');
-  // Local state to hold the category selected for editing.
-  const [editCategory, setEditCategory] = useState<ICategories | null>(null);
-
   const dispatch = useAppDispatch();
-  const { categories } = useAppSelector((store) => store.categores);
+  const { data: categories = [] } = useCategories();
+  const deleteCategory = useDeleteCategory();
+  const { isOpen, type, data } = useAppSelector((store) => store.modal);
 
-  useEffect(() => {
-    dispatch(fetchCategories());
-  }, [dispatch]);
-
-  const handleDelete = async (_id: string) => {
-    dispatch(deleteCategory(_id));
-    toast.success('Category deleted successfully');
-    setIsDeleteModal(false);
-  };
-
-  const handleModal = (_id: string) => {
-    setDeleteId(_id);
-    setIsDeleteModal(true);
+  const handleDelete = () => {
+    if (data?._id) {
+      deleteCategory.mutate(data._id);
+    }
   };
 
   return (
@@ -52,12 +29,11 @@ const Categories = () => {
                 type="text"
                 id="default-search"
                 className="block w-80 h-11 pr-5 pl-12 py-2.5 text-base font-normal shadow-xs text-gray-900 bg-transparent border border-gray-300 rounded-full placeholder-gray-400 focus:outline-none"
-                placeholder="Search for company"
+                placeholder="Search for category"
               />
-              {/* Using Redux modal for adding a category */}
               <Button
                 variant="default"
-                onClick={() => dispatch(setIsOpen(true))}
+                onClick={() => dispatch(openModal({ type: 'add' }))}
               >
                 Add Category
               </Button>
@@ -67,28 +43,16 @@ const Categories = () => {
             <table className="min-w-full rounded-xl">
               <thead>
                 <tr className="bg-gray-50">
-                  <th
-                    scope="col"
-                    className="p-5 text-left text-sm leading-6 font-semibold text-gray-900 capitalize rounded-t-xl"
-                  >
+                  <th className="p-5 text-left text-sm font-semibold text-gray-900 capitalize rounded-t-xl">
                     Id
                   </th>
-                  <th
-                    scope="col"
-                    className="p-5 text-left text-sm leading-6 font-semibold text-gray-900 capitalize"
-                  >
+                  <th className="p-5 text-left text-sm font-semibold text-gray-900 capitalize">
                     Name
                   </th>
-                  <th
-                    scope="col"
-                    className="p-5 text-left text-sm leading-6 font-semibold text-gray-900 capitalize"
-                  >
+                  <th className="p-5 text-left text-sm font-semibold text-gray-900 capitalize">
                     Description
                   </th>
-                  <th
-                    scope="col"
-                    className="p-5 text-left text-sm leading-6 font-semibold text-gray-900 capitalize rounded-t-xl"
-                  >
+                  <th className="p-5 text-left text-sm font-semibold text-gray-900 capitalize rounded-t-xl">
                     Actions
                   </th>
                 </tr>
@@ -99,21 +63,29 @@ const Categories = () => {
                     key={item._id}
                     className="bg-white transition-all duration-500 hover:bg-gray-50"
                   >
-                    <td className="p-5 whitespace-nowrap text-sm leading-6 font-medium text-gray-900">
+                    <td className="p-5 text-sm font-medium text-gray-900">
                       {index + 1}
                     </td>
-                    <td className="p-5 whitespace-nowrap text-sm leading-6 font-medium text-gray-900">
+                    <td className="p-5 text-sm font-medium text-gray-900">
                       {item.name}
                     </td>
-                    <td className="p-5 whitespace-nowrap text-sm leading-6 font-medium text-gray-900">
+                    <td className="p-5 text-sm font-medium text-gray-900">
                       {item.description}
                     </td>
                     <td className="p-5">
                       <div className="flex items-center gap-1">
-                        <Button onClick={() => setEditCategory(item)}>
+                        <Button
+                          onClick={() =>
+                            dispatch(openModal({ type: 'edit', data: item }))
+                          }
+                        >
                           <Pencil />
                         </Button>
-                        <Button onClick={() => handleModal(item._id)}>
+                        <Button
+                          onClick={() =>
+                            dispatch(openModal({ type: 'delete', data: item }))
+                          }
+                        >
                           <Trash />
                         </Button>
                       </div>
@@ -126,46 +98,35 @@ const Categories = () => {
         </div>
       </div>
 
-      {/* Add Category Modal using Redux */}
+      {/* Add/Edit Category Modal */}
       <Modal
-        open={useAppSelector((store) => store.modal.isOpen)}
-        onOpenChange={(open) => dispatch(setIsOpen(open))}
+        open={isOpen && (type === 'add' || type === 'edit')}
+        onOpenChange={(open) => !open && dispatch(closeModal())}
         header={{
-          title: 'Add Category',
-          description: 'Please fill out the form to add a new category.',
+          title: type === 'edit' ? 'Edit Category' : 'Add Category',
+          description:
+            type === 'edit'
+              ? 'Update the category details.'
+              : 'Fill out the form to add a new category.',
         }}
       >
-        <Form />
+        <Form defaultValues={type === 'edit' ? data : undefined} />
       </Modal>
 
-      {/* Edit Category Modal using Local State */}
+      {/* Delete Confirmation Modal */}
       <Modal
-        open={Boolean(editCategory)}
-        onOpenChange={(open) => {
-          if (!open) setEditCategory(null);
-        }}
-        header={{
-          title: 'Edit Category',
-          description: 'Update the details of the category.',
-        }}
-      >
-        {editCategory && <Form defaultValues={editCategory} />}
-      </Modal>
-
-      {/* Delete Confirmation Modal using Local State */}
-      <Modal
-        open={isDeleteModal}
-        onOpenChange={setIsDeleteModal}
+        open={isOpen && type === 'delete'}
+        onOpenChange={(open) => !open && dispatch(closeModal())}
         header={{
           title: 'Delete Confirmation',
           description: 'Are you sure you want to delete this category?',
         }}
       >
         <div className="flex justify-between">
-          <Button variant="destructive" onClick={() => handleDelete(deleteId)}>
+          <Button variant="destructive" onClick={handleDelete}>
             Yes, Delete
           </Button>
-          <Button onClick={() => setIsDeleteModal(false)}>Cancel</Button>
+          <Button onClick={() => dispatch(closeModal())}>Cancel</Button>
         </div>
       </Modal>
     </div>

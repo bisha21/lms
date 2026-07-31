@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { toast } from 'react-toastify';
-import { useAppDispatch } from '../redux/hooks';
-import { createCategory, updateCategory } from '@/redux/category/categorySlice';
-import { setIsOpen } from '@/redux/modal/modalSlice';
+import { useCreateCategory, useUpdateCategory } from '@/features/categories/hooks';
 
 interface FormProps {
   defaultValues?: { _id: string; name: string; description: string };
@@ -14,7 +11,8 @@ const Form: React.FC<FormProps> = ({ defaultValues }) => {
   const [description, setDescription] = useState<string>(
     defaultValues?.description || ''
   );
-  const dispatch = useAppDispatch();
+  const createCategory = useCreateCategory();
+  const updateCategory = useUpdateCategory();
 
   // In case defaultValues update dynamically:
   useEffect(() => {
@@ -27,24 +25,12 @@ const Form: React.FC<FormProps> = ({ defaultValues }) => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const data = { name, description };
-    try {
-      if (defaultValues) {
-        // Update category if default values exist.
-        await dispatch(updateCategory(defaultValues._id, data));
-        toast.success('Category updated successfully');
-      } else {
-        // Create category if no default values provided.
-        await dispatch(createCategory(data));
-        toast.success('Category created successfully');
-      }
+    if (defaultValues) {
+      updateCategory.mutate({ id: defaultValues._id, data });
+    } else {
+      createCategory.mutate(data);
       setName('');
       setDescription('');
-      dispatch(setIsOpen(false));
-    } catch (err) {
-      console.log('Error', err);
-      toast.error(
-        defaultValues ? 'Error updating category' : 'Error creating category'
-      );
     }
   };
 

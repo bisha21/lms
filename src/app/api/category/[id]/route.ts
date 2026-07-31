@@ -1,15 +1,27 @@
-import { createConnection } from "@/database/db"
-import { deleteCategory, updateCategory } from "../category.controller";
+import { createConnection } from '@/database/db';
+import { deleteCategory, getSingleCategory, updateCategory } from '../category.controller';
+import { withErrorHandling } from '@/lib/catchAsync';
 
-export const DELETE = async (req: Request, { params }: { params: { id: string } }) => {
-    createConnection();
-    const id = params.id;   
-    return deleteCategory(id);
-}
+export const DELETE = withErrorHandling(
+  async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
+    await createConnection();
+    const { id } = await params;
+    return deleteCategory(req, id);
+  }
+);
 
-export const PATCH= async (req: Request, { params }: { params: { id: string } }) => {
-    createConnection();
-    const id = params.id;
-    const { name, description } = await req.json();
-    return updateCategory(id, name, description);
-}
+export const PATCH = withErrorHandling(
+  async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
+    await createConnection();
+    const { id } = await params;
+    return updateCategory(req, id);
+  }
+);
+
+export const GET = withErrorHandling(
+  async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
+    await createConnection();
+    const { id } = await params;
+    return getSingleCategory(id);
+  }
+);

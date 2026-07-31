@@ -1,22 +1,40 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+
+interface ModalState {
+  isOpen: boolean;
+  type: 'add' | 'edit' | 'delete' | null;
+  // Holds whichever record type the open modal is acting on (category, course,
+  // lesson, ...) — genuinely polymorphic, so callers narrow it themselves.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data: any;
+}
+
+const initialState: ModalState = {
+  isOpen: false,
+  type: null,
+  data: null,
+};
 
 const modalSlice = createSlice({
-  name: "modal",
-  initialState: {
-    isOpen: false,
-  },
+  name: 'modal',
+  initialState,
   reducers: {
-    openModal: (state) => {
+    openModal: (
+      state,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      action: PayloadAction<{ type: ModalState['type']; data?: any }>
+    ) => {
       state.isOpen = true;
+      state.type = action.payload.type;
+      state.data = action.payload.data || null;
     },
     closeModal: (state) => {
       state.isOpen = false;
-    },
-    setIsOpen: (state, action) => {
-      state.isOpen = action.payload;
+      state.type = null;
+      state.data = null;
     },
   },
 });
 
-export const { openModal, closeModal, setIsOpen } = modalSlice.actions;
+export const { openModal, closeModal } = modalSlice.actions;
 export default modalSlice.reducer;
