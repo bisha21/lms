@@ -19,7 +19,8 @@ export type Action =
   | 'section:update'
   | 'section:delete'
   | 'coupon:manage'
-  | 'admin:overview';
+  | 'admin:overview'
+  | 'instructor:overview';
 
 const PERMISSIONS: Record<Action, Role[]> = {
   'category:create': [Role.SUPER_ADMIN, Role.ADMIN],
@@ -36,6 +37,7 @@ const PERMISSIONS: Record<Action, Role[]> = {
   'section:delete': [Role.SUPER_ADMIN, Role.ADMIN, Role.INSTRUCTOR],
   'coupon:manage': [Role.SUPER_ADMIN, Role.ADMIN],
   'admin:overview': [Role.SUPER_ADMIN, Role.ADMIN],
+  'instructor:overview': [Role.SUPER_ADMIN, Role.ADMIN, Role.INSTRUCTOR],
 };
 
 export function can(role: Role | undefined | null, action: Action): boolean {

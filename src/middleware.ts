@@ -63,6 +63,15 @@ export async function middleware(req: NextRequest) {
         { status: 403 },
       );
     }
+    // /api/instructor/* — the instructor dashboard, needs instructor:overview for every
+    // method (GET-only today, but same "sensitive by default" treatment as /api/admin).
+    const needsInstructorOverview = pathname.startsWith('/api/instructor');
+    if (needsInstructorOverview && !can(role, 'instructor:overview')) {
+      return NextResponse.json(
+        { message: "You don't have permission to perform this action" },
+        { status: 403 },
+      );
+    }
     // Course/lesson/section mutations: Super Admin, Admin, and Instructor may all attempt
     // these (ownership is checked server-side); Student may not. GET is exempted for
     // /api/lessons too now — GET /api/lessons/:id (lesson content) must be reachable by
