@@ -4,7 +4,7 @@ import './globals.css';
 import Session from '@/_component/session';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css'; // Import the toast styles
-import StoreProvider from './StoreProvider';
+import Providers from './Providers';
 const geistSans = Geist({
   variable: '--font-geist-sans',
   subsets: ['latin'],
@@ -29,7 +29,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <Session>
-          <StoreProvider>{children}</StoreProvider>
+          <Providers>{children}</Providers>
           <ToastContainer />
         </Session>
       </body>

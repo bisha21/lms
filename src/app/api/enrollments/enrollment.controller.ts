@@ -1,5 +1,7 @@
 import { createConnection } from '@/database/db';
 import Course, { CourseStatus } from '@/database/models/course.schema';
+// Registers "Category" so the nested course->category populate below resolves.
+import '@/database/models/category';
 import { Enrollment } from '@/database/models/enrollment.model';
 import { NextResponse } from 'next/server';
 import { AppError } from '@/lib/appError';

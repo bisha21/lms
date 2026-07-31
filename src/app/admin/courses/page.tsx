@@ -1,8 +1,8 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/redux/hooks';
-import { deleteCourse, fetchCourses, togglePublishCourse } from '@/redux/courses/coursesSlice';
+import { useCourses, useDeleteCourse, useTogglePublishCourse } from '@/features/courses/hooks';
 import { Button } from '@/components/ui/button';
 import Modal from '@/_component/Modal';
 import CourseForm from '@/_component/CourseForm';
@@ -10,22 +10,22 @@ import { Pencil, Trash } from 'lucide-react';
 import { closeModal, openModal } from '@/redux/modal/modalSlice';
 
 function Courses() {
-  const courses = useAppSelector((store) => store.courses.courses);
+  const { data } = useCourses();
+  const courses = data?.courses ?? [];
   const [search, setSearch] = useState<string>('');
-  const { isOpen, type, data } = useAppSelector((store) => store.modal);
+  const { isOpen, type, data: modalData } = useAppSelector((store) => store.modal);
   const router = useRouter();
 
   const dispatch = useAppDispatch();
-  useEffect(() => {
-    dispatch(fetchCourses());
-  }, [dispatch]);
+  const deleteCourse = useDeleteCourse();
+  const togglePublishCourse = useTogglePublishCourse();
+
   const filteredCourses = courses.filter((course) =>
     course.title.toLowerCase().includes(search.toLowerCase())
   );
   const handleDelete = () => {
-    if (data?._id) {
-      dispatch(deleteCourse(data._id));
-      dispatch(closeModal());
+    if (modalData?._id) {
+      deleteCourse.mutate(modalData._id);
     }
   };
 
@@ -104,12 +104,10 @@ function Courses() {
                         <td className="p-5 whitespace-nowrap text-sm leading-6 font-medium">
                           <button
                             onClick={() =>
-                              dispatch(
-                                togglePublishCourse(
-                                  course._id as string,
-                                  course.status === 'published' ? 'draft' : 'published'
-                                )
-                              )
+                              togglePublishCourse.mutate({
+                                id: course._id as string,
+                                status: course.status === 'published' ? 'draft' : 'published',
+                              })
                             }
                             className={`px-2 py-1 rounded-full text-xs ${
                               course.status === 'published'
@@ -170,7 +168,7 @@ function Courses() {
               : 'Fill out the form to add a new category.',
         }}
       >
-        <CourseForm defaultValues={type === 'edit' ? data : undefined} />
+        <CourseForm defaultValues={type === 'edit' ? modalData : undefined} />
       </Modal>
 
       {/* Delete Confirmation Modal */}

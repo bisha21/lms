@@ -7,7 +7,7 @@ import { getClientIp, isRateLimited } from '@/lib/rateLimit';
 import { NextResponse } from 'next/server';
 
 export const POST = withErrorHandling(async (req: Request) => {
-  if (isRateLimited(`register:${getClientIp(req)}`, 5, 60_000)) {
+  if (await isRateLimited(`register:${getClientIp(req)}`, 5, 60_000)) {
     throw new AppError('Too many requests, please try again later', 429);
   }
 

@@ -3,29 +3,19 @@ import Form from '@/_component/Form';
 import Modal from '@/_component/Modal';
 import { Button } from '@/components/ui/button';
 import { Pencil, Trash } from 'lucide-react';
-import { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/redux/hooks';
-import {
-  deleteCategory,
-  fetchCategories,
-} from '@/redux/category/categorySlice';
 import { openModal, closeModal } from '@/redux/modal/modalSlice';
-import { toast } from 'react-toastify';
+import { useCategories, useDeleteCategory } from '@/features/categories/hooks';
 
 const Categories = () => {
   const dispatch = useAppDispatch();
-  const { categories } = useAppSelector((store) => store.categores);
+  const { data: categories = [] } = useCategories();
+  const deleteCategory = useDeleteCategory();
   const { isOpen, type, data } = useAppSelector((store) => store.modal);
-
-  useEffect(() => {
-    dispatch(fetchCategories());
-  }, [dispatch]);
 
   const handleDelete = () => {
     if (data?._id) {
-      dispatch(deleteCategory(data._id));
-      toast.success('Category deleted successfully');
-      dispatch(closeModal());
+      deleteCategory.mutate(data._id);
     }
   };
 

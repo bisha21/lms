@@ -1,24 +1,26 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useParams } from 'next/navigation';
-import { useAppDispatch, useAppSelector } from '@/redux/hooks';
 import {
-  fetchLessons,
-  createLesson,
-  updateLesson,
-  deleteLesson,
-  reorderLesson,
-} from '@/redux/lessons/lessonsSlice';
+  useCreateLesson,
+  useDeleteLesson,
+  useLessons,
+  useReorderLesson,
+  useUpdateLesson,
+} from '@/features/lessons/hooks';
 import { Button } from '@/components/ui/button';
 import Modal from '@/_component/Modal';
 import { Pencil, Trash, ArrowUp, ArrowDown } from 'lucide-react';
-import { ILesson } from '@/redux/lessons/type';
+import { ILesson } from '@/features/lessons/types';
 
 export default function CourseLessonsPage() {
   const { id: courseId } = useParams<{ id: string }>();
-  const dispatch = useAppDispatch();
-  const { lessons } = useAppSelector((store) => store.lessons);
+  const { data: lessons = [] } = useLessons(courseId);
+  const createLesson = useCreateLesson(courseId);
+  const updateLesson = useUpdateLesson(courseId);
+  const reorderLesson = useReorderLesson(courseId);
+  const deleteLesson = useDeleteLesson(courseId);
 
   const [addOpen, setAddOpen] = useState(false);
   const [editing, setEditing] = useState<ILesson | null>(null);
@@ -26,12 +28,6 @@ export default function CourseLessonsPage() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [video, setVideo] = useState<File | null>(null);
-
-  useEffect(() => {
-    if (courseId) {
-      dispatch(fetchLessons(courseId));
-    }
-  }, [courseId, dispatch]);
 
   const resetForm = () => {
     setTitle('');
@@ -42,27 +38,24 @@ export default function CourseLessonsPage() {
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!video) return;
-    await dispatch(createLesson(courseId, { title, description, video }));
+    await createLesson.mutateAsync({ title, description, video });
     resetForm();
     setAddOpen(false);
-    dispatch(fetchLessons(courseId));
   };
 
   const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editing) return;
-    await dispatch(updateLesson(editing._id, { title, description }));
+    await updateLesson.mutateAsync({ id: editing._id, data: { title, description } });
     setEditing(null);
-    dispatch(fetchLessons(courseId));
   };
 
   const move = async (index: number, direction: -1 | 1) => {
     const target = lessons[index + direction];
     const current = lessons[index];
     if (!target || !current) return;
-    await dispatch(reorderLesson(current._id, target.order));
-    await dispatch(reorderLesson(target._id, current.order));
-    dispatch(fetchLessons(courseId));
+    await reorderLesson.mutateAsync({ id: current._id, order: target.order });
+    await reorderLesson.mutateAsync({ id: target._id, order: current.order });
   };
 
   return (
@@ -198,7 +191,7 @@ export default function CourseLessonsPage() {
           <Button
             variant="destructive"
             onClick={() => {
-              if (deleting) dispatch(deleteLesson(deleting._id));
+              if (deleting) deleteLesson.mutate(deleting._id);
               setDeleting(null);
             }}
           >

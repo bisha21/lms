@@ -1,30 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { API } from '@/http/http';
-
-interface IOverviewRow {
-  _id: string;
-  title: string;
-  coursePrice: number;
-  enrollmentCount: number;
-  revenue: number;
-}
+import { useAdminOverview } from '@/features/admin/hooks';
 
 export default function AdminStudentsPage() {
-  const [rows, setRows] = useState<IOverviewRow[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    API.get('/admin/overview')
-      .then((res) => setRows(res.data.data))
-      .finally(() => setLoading(false));
-  }, []);
+  const { data: rows = [], isLoading } = useAdminOverview();
 
   const totalEnrollments = rows.reduce((sum, r) => sum + r.enrollmentCount, 0);
   const totalRevenue = rows.reduce((sum, r) => sum + r.revenue, 0);
 
-  if (loading) return <p>Loading...</p>;
+  if (isLoading) return <p>Loading...</p>;
 
   return (
     <div className="flex flex-col">

@@ -1,7 +1,6 @@
 'use client';
 import { AppStore, makeStore } from '@/redux/store';
 import { useRef } from 'react';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Provider } from 'react-redux';
 
 export default function StoreProvider({

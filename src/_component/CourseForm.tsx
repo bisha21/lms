@@ -1,8 +1,7 @@
 import { Button } from '@/components/ui/button';
-import { fetchCategories } from '@/redux/category/categorySlice';
-import { createCourse, updateCourse } from '@/redux/courses/coursesSlice';
-import { ICourseForData } from '@/redux/courses/type';
-import { useAppDispatch, useAppSelector } from '@/redux/hooks';
+import { useCategories } from '@/features/categories/hooks';
+import { useCreateCourse, useUpdateCourse } from '@/features/courses/hooks';
+import { ICourseForData } from '@/features/courses/types';
 import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
 
 interface CourseFormProps {
@@ -19,8 +18,9 @@ const emptyForm: ICourseForData = {
 };
 
 const CourseForm: React.FC<CourseFormProps> = ({ defaultValues }) => {
-  const dispatch = useAppDispatch();
-  const { categories } = useAppSelector((store) => store.categores);
+  const { data: categories = [] } = useCategories();
+  const createCourse = useCreateCourse();
+  const updateCourse = useUpdateCourse();
   const [data, setData] = useState<ICourseForData>(emptyForm);
 
   useEffect(() => {
@@ -45,18 +45,12 @@ const CourseForm: React.FC<CourseFormProps> = ({ defaultValues }) => {
     });
   };
 
-  useEffect(() => {
-    if (categories.length === 0) {
-      dispatch(fetchCategories());
-    }
-  }, [dispatch, categories.length]);
-
   const createCourseHandle = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (defaultValues?._id) {
-      dispatch(updateCourse(data, defaultValues._id));
+      updateCourse.mutate({ id: defaultValues._id, data });
     } else {
-      dispatch(createCourse(data));
+      createCourse.mutate(data);
     }
   };
 

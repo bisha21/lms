@@ -1,5 +1,9 @@
 import { createConnection } from '@/database/db';
 import Course, { CourseStatus } from '@/database/models/course.schema';
+// Registers the "Category" model so `.populate('category')` below can resolve
+// it — Mongoose needs the schema registered before populate runs, regardless
+// of whether anything else in this request touched the Category module first.
+import '@/database/models/category';
 import { Lesson } from '@/database/models/lesson';
 import { Enrollment } from '@/database/models/enrollment.model';
 import { NextResponse } from 'next/server';
