@@ -2,11 +2,12 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { Lock } from 'lucide-react';
-import { toast } from 'react-toastify';
+import { Heart, Lock } from 'lucide-react';
 import { useCourseBySlug } from '@/features/courses/hooks';
 import { useEnrollInCourse, useMyEnrollments } from '@/features/enrollments/hooks';
 import { useCheckoutCourse } from '@/features/payments/hooks';
+import { useAddToCart, useCart } from '@/features/cart/hooks';
+import { useAddToWishlist, useRemoveFromWishlist, useWishlist } from '@/features/wishlist/hooks';
 import { Button } from '@/components/ui/button';
 
 export default function CourseDetailPage() {
@@ -15,8 +16,13 @@ export default function CourseDetailPage() {
   const { data: session } = useSession();
   const { data, isLoading } = useCourseBySlug(slug);
   const { data: enrollments = [] } = useMyEnrollments(!!session);
+  const { data: cart } = useCart(!!session);
+  const { data: wishlist } = useWishlist(!!session);
   const enrollInCourse = useEnrollInCourse();
   const checkoutCourse = useCheckoutCourse();
+  const addToCart = useAddToCart();
+  const addToWishlist = useAddToWishlist();
+  const removeFromWishlist = useRemoveFromWishlist();
 
   const course = data?.course;
   const lessons = data?.lessons ?? [];
@@ -26,6 +32,8 @@ export default function CourseDetailPage() {
   if (!course) return <p className="max-w-4xl mx-auto px-6 py-10">Course not found.</p>;
 
   const isEnrolled = enrollments.some((e) => e.course?._id === course._id);
+  const isInCart = cart?.items.some((item) => item._id === course._id) ?? false;
+  const isWishlisted = wishlist?.items.some((item) => item._id === course._id) ?? false;
   const instructor = typeof course.instructor === 'string' ? null : course.instructor;
 
   const handleEnrollOrBuy = async () => {
@@ -64,17 +72,49 @@ export default function CourseDetailPage() {
             Continue Learning
           </Button>
         ) : (
-          <Button onClick={handleEnrollOrBuy} disabled={actionLoading}>
-            {course.coursePrice > 0 ? `Buy for $${course.coursePrice}` : 'Enroll for free'}
-          </Button>
+          <>
+            <Button onClick={handleEnrollOrBuy} disabled={actionLoading}>
+              {course.coursePrice > 0 ? `Buy for $${course.coursePrice}` : 'Enroll for free'}
+            </Button>
+            {course.coursePrice > 0 && (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isInCart || addToCart.isPending}
+                  onClick={() => {
+                    if (!session) {
+                      router.push('/login');
+                      return;
+                    }
+                    addToCart.mutate(course._id as string);
+                  }}
+                >
+                  {isInCart ? 'In Cart' : 'Add to Cart'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+                  onClick={() => {
+                    if (!session) {
+                      router.push('/login');
+                      return;
+                    }
+                    if (isWishlisted) {
+                      removeFromWishlist.mutate(course._id as string);
+                    } else {
+                      addToWishlist.mutate(course._id as string);
+                    }
+                  }}
+                >
+                  <Heart className={`h-4 w-4 ${isWishlisted ? 'fill-red-500 text-red-500' : ''}`} />
+                </Button>
+              </>
+            )}
+          </>
         )}
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => toast.info('Cart is coming soon')}
-        >
-          Add to Cart
-        </Button>
       </div>
 
       {instructor && (

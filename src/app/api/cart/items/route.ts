@@ -1,6 +1,6 @@
-import { createCheckout } from '../payment.controller';
+import { addToCart } from '../cart.controller';
 import { withErrorHandling } from '@/lib/catchAsync';
 
 export const POST = withErrorHandling(async (req: Request) => {
-  return createCheckout(req);
+  return addToCart(req);
 });

@@ -6,7 +6,8 @@ import Course from '@/database/models/course.schema';
 import { Enrollment } from '@/database/models/enrollment.model';
 import { Payment, PaymentStatus } from '@/database/models/payment.model';
 import { Review } from '@/database/models/review';
-import { getAllCourses } from '@/app/api/courses/course.Controller';
+import User from '@/database/models/user.schema';
+import { getAllCourses, getInstructorsWithCourses } from '@/app/api/courses/course.Controller';
 import { mockGetServerSession } from '../setup';
 
 function catalogRequest(query: Record<string, string> = {}) {
@@ -207,15 +208,65 @@ describe('getAllCourses — filters, sorting, pagination', () => {
     expect(page1.meta).toEqual({ page: 1, limit: 2, total: 5, totalPages: 3 });
   });
 
-  it('does not leak instructor password/email in the joined instructor summary', async () => {
-    const instructor = new mongoose.Types.ObjectId();
-    await createPublishedCourse({ title: 'Has Instructor', instructor });
+  it('whitelists the joined instructor to {_id, username, profileImage} — no password/email leak', async () => {
+    const instructor = await User.create({
+      username: 'Jane Instructor',
+      email: 'jane@example.com',
+      password: 'super-secret-hash',
+      profileImage: 'https://cdn.example.com/jane.png',
+    });
+    await createPublishedCourse({ title: 'Has Instructor', instructor: instructor._id });
 
     const response = await getAllCourses(catalogRequest());
     const body = await response.json();
 
+    expect(body.data[0].instructor).toEqual({
+      _id: instructor._id.toString(),
+      username: 'Jane Instructor',
+      profileImage: 'https://cdn.example.com/jane.png',
+    });
     const serialized = JSON.stringify(body);
-    expect(serialized).not.toContain('password');
-    expect(serialized).not.toMatch(/"email"/);
+    expect(serialized).not.toContain('super-secret-hash');
+    expect(serialized).not.toContain('jane@example.com');
+  });
+});
+
+describe('getInstructorsWithCourses', () => {
+  beforeEach(async () => {
+    await createConnection();
+  });
+
+  it('returns only distinct instructors with at least one published, non-deleted course', async () => {
+    const instructorWithPublished = await User.create({
+      username: 'Has Published',
+      email: 'published@example.com',
+    });
+    const instructorDraftOnly = await User.create({
+      username: 'Draft Only',
+      email: 'draft@example.com',
+    });
+    const instructorDeletedOnly = await User.create({
+      username: 'Deleted Only',
+      email: 'deleted@example.com',
+    });
+
+    await createPublishedCourse({ title: 'Course One', instructor: instructorWithPublished._id });
+    await createPublishedCourse({ title: 'Course Two', instructor: instructorWithPublished._id }); // same instructor, twice
+    await createPublishedCourse({
+      title: 'Draft Course',
+      status: 'draft',
+      instructor: instructorDraftOnly._id,
+    });
+    await createPublishedCourse({
+      title: 'Deleted Course',
+      isDeleted: true,
+      instructor: instructorDeletedOnly._id,
+    });
+
+    const response = await getInstructorsWithCourses();
+    const body = await response.json();
+
+    expect(body.data).toHaveLength(1);
+    expect(body.data[0].username).toBe('Has Published');
   });
 });
