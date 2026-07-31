@@ -1,4 +1,4 @@
-import { ILesson } from '@/features/lessons/types';
+import { ILessonContent } from '@/features/lessons/types';
 
 export interface ISection {
   _id: string;
@@ -6,5 +6,5 @@ export interface ISection {
   title: string;
   order: number;
   createdAt: string;
-  lessons: ILesson[];
+  lessons: ILessonContent[];
 }

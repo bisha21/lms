@@ -8,7 +8,7 @@ import { NextResponse } from 'next/server';
 import { AppError } from '@/lib/appError';
 import { createLessonSchema, updateLessonSchema } from '@/lib/validate/lesson.schema';
 import { reorderSchema } from '@/lib/validate/section.schema';
-import { uploadVideoBuffer, destroyVideo } from '@/lib/cloudinary';
+import { destroyRaw, destroyVideo, uploadRawBuffer, uploadVideoBuffer } from '@/lib/cloudinary';
 import { requireAuth, requirePermission } from '../../../../middleware/auth.middleware';
 import { Action } from '@/lib/rbac/permissions';
 import { assertCourseOwnership, ownsCourse } from '@/lib/rbac/ownership';
@@ -70,29 +70,40 @@ export async function createLessonForSection(req: Request, sectionId: string) {
   const { section } = await requireSectionOwner('lesson:create', sectionId);
 
   const formData = await req.formData();
-  const video = formData.get('video');
-  if (!(video instanceof File)) {
-    throw new AppError('A video file is required', 400);
-  }
-
   const data = createLessonSchema.parse({
     title: formData.get('title'),
     description: formData.get('description'),
     durationSeconds: formData.get('durationSeconds') || undefined,
+    contentType: formData.get('contentType') || undefined,
   });
-
-  const buffer = Buffer.from(await video.arrayBuffer());
-  const { url, publicId } = await uploadVideoBuffer(buffer, video.name);
 
   const lastLesson = await Lesson.findOne({ section: sectionId }).sort('-order');
   const order = lastLesson ? lastLesson.order + 1 : 0;
 
+  let asset: { videoUrl?: string; videoPublicId?: string; pdfUrl?: string; pdfPublicId?: string };
+  if (data.contentType === 'pdf') {
+    const pdf = formData.get('pdf');
+    if (!(pdf instanceof File)) {
+      throw new AppError('A PDF file is required', 400);
+    }
+    const buffer = Buffer.from(await pdf.arrayBuffer());
+    const { url, publicId } = await uploadRawBuffer(buffer, pdf.name);
+    asset = { pdfUrl: url, pdfPublicId: publicId };
+  } else {
+    const video = formData.get('video');
+    if (!(video instanceof File)) {
+      throw new AppError('A video file is required', 400);
+    }
+    const buffer = Buffer.from(await video.arrayBuffer());
+    const { url, publicId } = await uploadVideoBuffer(buffer, video.name);
+    asset = { videoUrl: url, videoPublicId: publicId };
+  }
+
   const lesson = await Lesson.create({
     ...data,
+    ...asset,
     course: section.course,
     section: sectionId,
-    videoUrl: url,
-    videoPublicId: publicId,
     order,
   });
 
@@ -143,6 +154,9 @@ export async function deleteLesson(id: string) {
 
   if (lesson.videoPublicId) {
     await destroyVideo(lesson.videoPublicId);
+  }
+  if (lesson.pdfPublicId) {
+    await destroyRaw(lesson.pdfPublicId);
   }
   await lesson.deleteOne();
 

@@ -4,10 +4,10 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Pencil, Trash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ILesson } from '@/features/lessons/types';
+import { ILessonContent } from '@/features/lessons/types';
 
 interface SortableLessonProps {
-  lesson: ILesson;
+  lesson: ILessonContent;
   index: number;
   onEdit: () => void;
   onDelete: () => void;

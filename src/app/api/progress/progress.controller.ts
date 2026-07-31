@@ -27,7 +27,14 @@ export async function getProgress(courseId: string) {
   const percent = totalLessons === 0 ? 0 : Math.round((completedLessons.length / totalLessons) * 100);
 
   return NextResponse.json(
-    { data: { completedLessons, totalLessons, percent } },
+    {
+      data: {
+        completedLessons,
+        totalLessons,
+        percent,
+        lastViewedLesson: progress?.lastViewedLesson ?? null,
+      },
+    },
     { status: 200 }
   );
 }
