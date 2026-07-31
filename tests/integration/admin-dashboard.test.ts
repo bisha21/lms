@@ -11,7 +11,7 @@ import { getAdminDashboard } from '@/app/api/admin/overview.controller';
 import { mockGetServerSession } from '../setup';
 
 async function createCourse(overrides: Partial<Record<string, unknown>> = {}) {
-  const category = await Category.create({ name: 'Programming' });
+  const category = await Category.create({ name: `Programming ${new mongoose.Types.ObjectId()}` });
   return Course.create({
     title: `Course ${new mongoose.Types.ObjectId()}`,
     courseDescription: 'desc',

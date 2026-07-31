@@ -10,7 +10,7 @@ import { getContinueLearning } from '@/app/api/progress/progress.controller';
 import { mockGetServerSession } from '../setup';
 
 async function createCourseWithLessons(title: string, lessonCount: number) {
-  const category = await Category.create({ name: 'Programming' });
+  const category = await Category.create({ name: `Programming ${new mongoose.Types.ObjectId()}` });
   const course = await Course.create({
     title,
     courseDescription: 'desc',

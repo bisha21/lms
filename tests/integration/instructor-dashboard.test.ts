@@ -11,7 +11,7 @@ import { getInstructorDashboard } from '@/app/api/instructor/dashboard.controlle
 import { mockGetServerSession } from '../setup';
 
 async function createCourseFor(instructorId: string, overrides: Partial<Record<string, unknown>> = {}) {
-  const category = await Category.create({ name: 'Programming' });
+  const category = await Category.create({ name: `Programming ${new mongoose.Types.ObjectId()}` });
   return Course.create({
     title: `Course ${new mongoose.Types.ObjectId()}`,
     courseDescription: 'desc',
