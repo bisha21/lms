@@ -1,0 +1,9 @@
+import { removeFromWishlist } from '../../wishlist.controller';
+import { withErrorHandling } from '@/lib/catchAsync';
+
+export const DELETE = withErrorHandling(
+  async (req: Request, { params }: { params: Promise<{ courseId: string }> }) => {
+    const { courseId } = await params;
+    return removeFromWishlist(courseId);
+  }
+);

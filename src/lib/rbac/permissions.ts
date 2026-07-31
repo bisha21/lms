@@ -18,6 +18,7 @@ export type Action =
   | 'section:create'
   | 'section:update'
   | 'section:delete'
+  | 'coupon:manage'
   | 'admin:overview';
 
 const PERMISSIONS: Record<Action, Role[]> = {
@@ -33,6 +34,7 @@ const PERMISSIONS: Record<Action, Role[]> = {
   'section:create': [Role.SUPER_ADMIN, Role.ADMIN, Role.INSTRUCTOR],
   'section:update': [Role.SUPER_ADMIN, Role.ADMIN, Role.INSTRUCTOR],
   'section:delete': [Role.SUPER_ADMIN, Role.ADMIN, Role.INSTRUCTOR],
+  'coupon:manage': [Role.SUPER_ADMIN, Role.ADMIN],
   'admin:overview': [Role.SUPER_ADMIN, Role.ADMIN],
 };
 
