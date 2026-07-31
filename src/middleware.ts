@@ -91,8 +91,11 @@ export async function middleware(req: NextRequest) {
   }
 
   const isAdminPage = pathname.startsWith('/admin');
+  const isInstructorPage = pathname.startsWith('/instructor');
   const isProtectedPage =
     isAdminPage ||
+    isInstructorPage ||
+    pathname.startsWith('/dashboard') ||
     pathname.startsWith('/my-courses') ||
     pathname.startsWith('/payments') ||
     pathname.startsWith('/cart') ||
@@ -111,12 +114,17 @@ export async function middleware(req: NextRequest) {
   if (isAdminPage && !can(role, 'admin:overview')) {
     return NextResponse.redirect(new URL('/', req.url));
   }
+  if (isInstructorPage && !can(role, 'instructor:overview')) {
+    return NextResponse.redirect(new URL('/', req.url));
+  }
   return NextResponse.next();
 }
 
 export const config = {
   matcher: [
     '/admin/:path*',
+    '/instructor/:path*',
+    '/dashboard/:path*',
     '/my-courses/:path*',
     '/payments/:path*',
     '/cart/:path*',
@@ -124,6 +132,7 @@ export const config = {
     '/checkout/:path*',
     '/courses/:path*/learn',
     '/api/admin/:path*',
+    '/api/instructor/:path*',
     '/api/category/:path*',
     '/api/courses/:path*',
     '/api/lessons/:path*',

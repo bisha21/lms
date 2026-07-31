@@ -21,6 +21,9 @@ const SiteHeader = () => {
       <nav className="flex items-center gap-4 text-sm text-gray-700">
         {session && (
           <>
+            <Link href="/dashboard" className="hover:text-gray-900">
+              Dashboard
+            </Link>
             <Link href="/my-courses" className="hover:text-gray-900">
               My Courses
             </Link>
@@ -46,6 +49,11 @@ const SiteHeader = () => {
             {can(session.user?.role, 'admin:overview') && (
               <Link href="/admin" className="hover:text-gray-900">
                 Admin
+              </Link>
+            )}
+            {can(session.user?.role, 'instructor:overview') && (
+              <Link href="/instructor" className="hover:text-gray-900">
+                Instructor
               </Link>
             )}
           </>
