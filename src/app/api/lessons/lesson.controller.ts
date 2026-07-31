@@ -1,15 +1,17 @@
 import { createConnection } from '@/database/db';
 import Course from '@/database/models/course.schema';
+import { Enrollment } from '@/database/models/enrollment.model';
 import { Lesson } from '@/database/models/lesson';
+import { Progress } from '@/database/models/progress.model';
 import { Section } from '@/database/models/section';
 import { NextResponse } from 'next/server';
 import { AppError } from '@/lib/appError';
 import { createLessonSchema, updateLessonSchema } from '@/lib/validate/lesson.schema';
 import { reorderSchema } from '@/lib/validate/section.schema';
 import { uploadVideoBuffer, destroyVideo } from '@/lib/cloudinary';
-import { requirePermission } from '../../../../middleware/auth.middleware';
+import { requireAuth, requirePermission } from '../../../../middleware/auth.middleware';
 import { Action } from '@/lib/rbac/permissions';
-import { assertCourseOwnership } from '@/lib/rbac/ownership';
+import { assertCourseOwnership, ownsCourse } from '@/lib/rbac/ownership';
 
 async function requireCourseOwner(action: Action, courseId: string) {
   const session = await requirePermission(action);
@@ -28,6 +30,39 @@ async function requireSectionOwner(action: Action, sectionId: string) {
   }
   const { session, course } = await requireCourseOwner(action, section.course.toString());
   return { session, course, section };
+}
+
+// The sole source of playable lesson content (videoUrl/pdfUrl) — re-verifies enrollment
+// on every single call, not just once at page load. Owners/admins may preview without an
+// Enrollment record; only an actual enrolled student's view updates their resume pointer.
+export async function getLessonContent(id: string) {
+  await createConnection();
+  const session = await requireAuth();
+
+  const lesson = await Lesson.findById(id);
+  if (!lesson) {
+    throw new AppError('Lesson not found', 404);
+  }
+
+  const course = await Course.findOne({ _id: lesson.course, isDeleted: false });
+  if (!course) {
+    throw new AppError('Course not found', 404);
+  }
+
+  if (!ownsCourse(course, session)) {
+    const enrolled = await Enrollment.findOne({ student: session.user.id, course: lesson.course });
+    if (!enrolled) {
+      throw new AppError('You must be enrolled to view this content', 403);
+    }
+
+    await Progress.findOneAndUpdate(
+      { student: session.user.id, course: lesson.course },
+      { $set: { lastViewedLesson: lesson._id } },
+      { upsert: true }
+    );
+  }
+
+  return NextResponse.json({ data: lesson }, { status: 200 });
 }
 
 export async function createLessonForSection(req: Request, sectionId: string) {

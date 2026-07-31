@@ -337,8 +337,11 @@ export const getCourseLessons = async (id: string) => {
     }
   }
 
-  const lessons = await Lesson.find({ course: id }).populate<{ section: ISection | null }>(
-    'section'
-  );
+  // Lightweight sidebar/navigation projection only — no videoUrl/pdfUrl/description.
+  // GET /api/lessons/:id (lesson.controller.ts::getLessonContent) is the sole source of
+  // actual playable content, and it re-verifies enrollment on every single request.
+  const lessons = await Lesson.find({ course: id })
+    .select('title order durationSeconds contentType section')
+    .populate<{ section: ISection | null }>('section');
   return NextResponse.json({ data: sortBySectionThenOrder(lessons) }, { status: 200 });
 };

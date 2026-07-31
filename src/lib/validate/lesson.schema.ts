@@ -4,6 +4,7 @@ export const createLessonSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
   durationSeconds: z.coerce.number().optional(),
+  contentType: z.enum(['video', 'pdf']).default('video'),
 });
 
 export const updateLessonSchema = z.object({

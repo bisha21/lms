@@ -1,12 +1,20 @@
 import mongoose, { Schema } from 'mongoose';
 
+export enum LessonContentType {
+  VIDEO = 'video',
+  PDF = 'pdf',
+}
+
 export interface ILesson extends Document {
   course: mongoose.Types.ObjectId;
   section?: mongoose.Types.ObjectId;
   title: string;
   description: string;
-  videoUrl: string;
+  contentType: LessonContentType;
+  videoUrl?: string;
   videoPublicId?: string;
+  pdfUrl?: string;
+  pdfPublicId?: string;
   order: number;
   durationSeconds?: number;
   createdAt: Date;
@@ -32,11 +40,23 @@ const lessonSchema = new Schema<ILesson>({
     type: String,
     required: true,
   },
+  // Whether videoUrl or pdfUrl is required is enforced at the Zod validation layer
+  // (src/lib/validate/lesson.schema.ts), not here — same approach as Course.level.
+  contentType: {
+    type: String,
+    enum: Object.values(LessonContentType),
+    default: LessonContentType.VIDEO,
+  },
   videoUrl: {
     type: String,
-    required: true,
   },
   videoPublicId: {
+    type: String,
+  },
+  pdfUrl: {
+    type: String,
+  },
+  pdfPublicId: {
     type: String,
   },
   order: {

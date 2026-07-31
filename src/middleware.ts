@@ -64,10 +64,13 @@ export async function middleware(req: NextRequest) {
       );
     }
     // Course/lesson/section mutations: Super Admin, Admin, and Instructor may all attempt
-    // these (ownership is checked server-side); Student may not.
+    // these (ownership is checked server-side); Student may not. GET is exempted for
+    // /api/lessons too now — GET /api/lessons/:id (lesson content) must be reachable by
+    // enrolled students, not just owners; the real enrollment-or-ownership check happens
+    // server-side in getLessonContent().
     const needsCourseManage =
       (req.method !== 'GET' && pathname.startsWith('/api/courses')) ||
-      pathname.startsWith('/api/lessons') || // PATCH/DELETE only — no GET route exists here
+      (req.method !== 'GET' && pathname.startsWith('/api/lessons')) ||
       pathname.startsWith('/api/sections'); // POST/PATCH/DELETE only — no GET route exists here
     if (needsCourseManage && !can(role, 'course:create')) {
       return NextResponse.json(
