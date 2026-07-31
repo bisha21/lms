@@ -1,33 +1,24 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { useAppDispatch, useAppSelector } from '@/redux/hooks';
-import { fetchCourses } from '@/redux/courses/coursesSlice';
-import { fetchCategories } from '@/redux/category/categorySlice';
+import { useCategories } from '@/features/categories/hooks';
+import { useCourses } from '@/features/courses/hooks';
 
 export default function CatalogPage() {
-  const dispatch = useAppDispatch();
-  const { courses, meta } = useAppSelector((store) => store.courses);
-  const { categories } = useAppSelector((store) => store.categores);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [page, setPage] = useState(1);
 
-  useEffect(() => {
-    dispatch(fetchCategories());
-  }, [dispatch]);
-
-  useEffect(() => {
-    dispatch(
-      fetchCourses({
-        page,
-        limit: 9,
-        search: search || undefined,
-        category: category || undefined,
-      })
-    );
-  }, [dispatch, page, search, category]);
+  const { data: categories = [] } = useCategories();
+  const { data } = useCourses({
+    page,
+    limit: 9,
+    search: search || undefined,
+    category: category || undefined,
+  });
+  const courses = data?.courses ?? [];
+  const meta = data?.meta;
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-10">

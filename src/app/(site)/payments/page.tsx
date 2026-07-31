@@ -1,20 +1,11 @@
 'use client';
 
-import { useEffect } from 'react';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
-import { useAppDispatch, useAppSelector } from '@/redux/hooks';
-import { fetchMyPayments } from '@/redux/payments/paymentsSlice';
+import { useMyPayments } from '@/features/payments/hooks';
 
 export default function PaymentsPage() {
   const { status } = useRequireAuth();
-  const dispatch = useAppDispatch();
-  const { payments } = useAppSelector((store) => store.payments);
-
-  useEffect(() => {
-    if (status === 'authenticated') {
-      dispatch(fetchMyPayments());
-    }
-  }, [status, dispatch]);
+  const { data: payments = [] } = useMyPayments(status === 'authenticated');
 
   if (status === 'loading') return <p className="max-w-4xl mx-auto px-6 py-10">Loading...</p>;
 

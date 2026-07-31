@@ -1,44 +1,26 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { API } from '@/http/http';
-import { useAppDispatch, useAppSelector } from '@/redux/hooks';
-import { fetchMyEnrollments, enrollInCourse } from '@/redux/enrollments/enrollmentsSlice';
-import { checkoutCourse } from '@/redux/payments/paymentsSlice';
+import { useCourseBySlug } from '@/features/courses/hooks';
+import { useEnrollInCourse, useMyEnrollments } from '@/features/enrollments/hooks';
+import { useCheckoutCourse } from '@/features/payments/hooks';
 import { Button } from '@/components/ui/button';
-import { ICourse } from '@/redux/courses/type';
-import { ILesson } from '@/redux/lessons/type';
 
 export default function CourseDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const router = useRouter();
   const { data: session } = useSession();
-  const dispatch = useAppDispatch();
-  const { enrollments } = useAppSelector((store) => store.enrollments);
+  const { data, isLoading } = useCourseBySlug(slug);
+  const { data: enrollments = [] } = useMyEnrollments(!!session);
+  const enrollInCourse = useEnrollInCourse();
+  const checkoutCourse = useCheckoutCourse();
 
-  const [course, setCourse] = useState<ICourse | null>(null);
-  const [lessons, setLessons] = useState<ILesson[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(false);
+  const course = data?.course;
+  const lessons = data?.lessons ?? [];
+  const actionLoading = enrollInCourse.isPending || checkoutCourse.isPending;
 
-  useEffect(() => {
-    API.get(`/courses/slug/${slug}`)
-      .then((res) => {
-        setCourse(res.data.data.course);
-        setLessons(res.data.data.lessons);
-      })
-      .finally(() => setLoading(false));
-  }, [slug]);
-
-  useEffect(() => {
-    if (session) {
-      dispatch(fetchMyEnrollments());
-    }
-  }, [session, dispatch]);
-
-  if (loading) return <p className="max-w-4xl mx-auto px-6 py-10">Loading...</p>;
+  if (isLoading) return <p className="max-w-4xl mx-auto px-6 py-10">Loading...</p>;
   if (!course) return <p className="max-w-4xl mx-auto px-6 py-10">Course not found.</p>;
 
   const isEnrolled = enrollments.some((e) => e.course?._id === course._id);
@@ -48,16 +30,15 @@ export default function CourseDetailPage() {
       router.push('/login');
       return;
     }
-    setActionLoading(true);
     try {
       if (course.coursePrice > 0) {
-        await dispatch(checkoutCourse(course._id as string));
+        await checkoutCourse.mutateAsync(course._id as string);
       } else {
-        await dispatch(enrollInCourse(course._id as string));
+        await enrollInCourse.mutateAsync(course._id as string);
         router.push(`/courses/${course.slug}/learn`);
       }
-    } finally {
-      setActionLoading(false);
+    } catch {
+      // toasted by the mutation's onError; stay on the page.
     }
   };
 

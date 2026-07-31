@@ -2,10 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { API } from '@/http/http';
-import { useAppDispatch, useAppSelector } from '@/redux/hooks';
-import { fetchLessons } from '@/redux/lessons/lessonsSlice';
-import { fetchProgress, markLessonComplete } from '@/redux/progress/progressSlice';
+import { useCourseBySlug } from '@/features/courses/hooks';
+import { useLessons } from '@/features/lessons/hooks';
+import { useMarkLessonComplete, useProgress } from '@/features/progress/hooks';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { Button } from '@/components/ui/button';
 
@@ -13,28 +12,23 @@ export default function CoursePlayerPage() {
   const { slug } = useParams<{ slug: string }>();
   const router = useRouter();
   const { status: authStatus } = useRequireAuth();
-  const dispatch = useAppDispatch();
-  const { lessons } = useAppSelector((store) => store.lessons);
-
-  const [courseId, setCourseId] = useState<string | null>(null);
   const [activeLesson, setActiveLesson] = useState(0);
 
-  const progress = useAppSelector((store) => store.progress.byCourse[courseId ?? '']);
+  // Only used to resolve the course id from its slug — its `lessons` projection is
+  // a trimmed summary (title/order/durationSeconds only, no videoUrl/description),
+  // so the full lesson content below comes from useLessons(courseId) instead.
+  const { data, isError } = useCourseBySlug(authStatus === 'authenticated' ? slug : '');
+  const courseId = data?.course._id as string | undefined;
+
+  const { data: lessons = [] } = useLessons(courseId ?? '');
+  const { data: progress } = useProgress(courseId ?? '', !!courseId);
+  const markLessonComplete = useMarkLessonComplete(courseId ?? '');
 
   useEffect(() => {
-    if (authStatus !== 'authenticated') return;
-
-    API.get(`/courses/slug/${slug}`)
-      .then((res) => {
-        const id = res.data.data.course._id as string;
-        setCourseId(id);
-        dispatch(fetchLessons(id));
-        dispatch(fetchProgress(id));
-      })
-      .catch(() => {
-        router.push(`/courses/${slug}`);
-      });
-  }, [slug, authStatus, dispatch, router]);
+    if (isError) {
+      router.push(`/courses/${slug}`);
+    }
+  }, [isError, slug, router]);
 
   if (authStatus === 'loading' || !courseId) {
     return <p className="max-w-6xl mx-auto px-6 py-10">Loading...</p>;
@@ -79,7 +73,7 @@ export default function CoursePlayerPage() {
             <Button
               className="mt-4"
               disabled={completedLessons.includes(lesson._id)}
-              onClick={() => courseId && dispatch(markLessonComplete(courseId, lesson._id))}
+              onClick={() => markLessonComplete.mutate(lesson._id)}
             >
               {completedLessons.includes(lesson._id) ? 'Completed' : 'Mark as complete'}
             </Button>

@@ -58,23 +58,24 @@ Auto-generated overview of the features implemented in this codebase, based on a
 
 ## 8. Client-side Architecture
 
-- **Redux Toolkit** store (`makeStore()` factory, one instance per app mount/request) with hand-rolled async thunks (not `createAsyncThunk`) per feature slice: `category`, `courses`, `enrollments`, `lessons`, `payments`, `progress`, and a shared `modal` slice (`isOpen` / `type: 'add'|'edit'|'delete'` / `data`) that drives every admin CRUD modal.
-- All API calls go through a shared axios instance (`baseURL: /api`) with `react-toastify` used for success/error feedback across every thunk.
+- **TanStack Query** (`src/features/*/hooks.ts`) now owns all server-state fetching (categories, courses, enrollments, lessons, payments, progress) — query hooks (`useCourses`, `useCategories`, ...) and mutation hooks (`useCreateCourse`, `useEnrollInCourse`, ...) replace the old hand-rolled Redux thunks, with a central key factory in `src/lib/queryKeys.ts`. Mutations invalidate the relevant query key and drive `react-toastify` success/error feedback; `useMarkLessonComplete` does an optimistic update with rollback via React Query's `onMutate`/`onError`/`onSettled`.
+- **Redux Toolkit** is kept only for UI-only shared state: a single `modal` slice (`isOpen` / `type: 'add'|'edit'|'delete'` / `data`) driving every admin CRUD modal, via `makeStore()` (one instance per app mount).
+- All HTTP calls (both React Query hooks and the axios instance) share `src/http/http.ts` (`baseURL: /api`).
 - **shadcn/ui** is configured (Tailwind v3-style config + `@tailwindcss/postcss` v4 present); currently only `button` and `dialog` primitives are in use, with the rest of the UI (forms, tables, sidebar) as hand-built components under `src/_component/`.
 
 ## 9. Cross-cutting Infrastructure
 
 - **Centralized error handling** — every API route is wrapped in `withErrorHandling`, which normalizes Zod validation errors (400), custom `AppError`s (custom status), Mongoose `CastError` (400), Mongo duplicate-key errors (409), and anything else (500) into consistent JSON responses.
 - **Zod validation** on all mutating endpoints (auth, category, course, lesson, payment schemas under `src/lib/validate/`).
+- **Edge middleware** (`src/middleware.ts`) — coarse-grained session/role gate (via `next-auth/jwt`'s `getToken`) on admin pages, protected site pages (`/my-courses`, `/payments`, `/courses/:slug/learn`), and API mutation routes, complementing (not replacing) the per-route `requireAuth()`/`authMiddleware()` + ownership checks in `middleware/auth.middleware.ts` and the controllers.
+- **Rate limiting** (`src/lib/rateLimit.ts`) — Upstash Redis-backed (sliding window) when `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` are configured, falling back to the original in-memory limiter otherwise (local dev/CI need no cloud account).
 - **MongoDB connection handling** — a singleton connector that reuses an existing ready connection, with a Windows-specific DNS override (`8.8.8.8`/`1.1.1.1`) to work around an `mongodb+srv://` SRV-lookup bug.
 - **Slug generation** — shared `slugify` helper used by both `Category` and `Course` pre-save hooks.
+- **Automated tests** — Vitest (`tests/unit`, `tests/integration`, `tests/hooks`) with `mongodb-memory-server` for DB-backed controller tests, and Playwright (`e2e/`) covering register/login, free enrollment, paid checkout → webhook → enrollment, and progress tracking; both run in GitHub Actions (`.github/workflows/ci.yml`) alongside lint/typecheck.
 
 ---
 
 ## Known Gaps / Not Yet Implemented
 
-- No Next.js edge `middleware.ts` — all route protection happens per-request inside route handlers/controllers plus client-side hooks.
 - Admin **Settings** page and **Stats/dashboard charts** are unimplemented placeholders.
-- Rate limiting is in-memory only (not safe across multiple server instances).
-- No automated test suite exists in the repo.
-- `src/app/count/` is a leftover demo counter page unrelated to LMS functionality.
+- Rate limiting still falls back to an in-memory, single-instance limiter when Upstash env vars aren't configured.

@@ -1,21 +1,12 @@
 'use client';
 
-import { useEffect } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
-import { useAppDispatch, useAppSelector } from '@/redux/hooks';
-import { fetchMyEnrollments } from '@/redux/enrollments/enrollmentsSlice';
+import { useMyEnrollments } from '@/features/enrollments/hooks';
 
 export default function MyCoursesPage() {
   const { status } = useRequireAuth();
-  const dispatch = useAppDispatch();
-  const { enrollments } = useAppSelector((store) => store.enrollments);
-
-  useEffect(() => {
-    if (status === 'authenticated') {
-      dispatch(fetchMyEnrollments());
-    }
-  }, [status, dispatch]);
+  const { data: enrollments = [] } = useMyEnrollments(status === 'authenticated');
 
   if (status === 'loading') return <p className="max-w-4xl mx-auto px-6 py-10">Loading...</p>;
 
