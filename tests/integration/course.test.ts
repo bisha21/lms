@@ -3,7 +3,13 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { createConnection } from '@/database/db';
 import Category from '@/database/models/category';
 import Course from '@/database/models/course.schema';
-import { deleteCourse, getAllCourses, getCourseById } from '@/app/api/courses/course.Controller';
+import {
+  createCourse,
+  deleteCourse,
+  getAllCourses,
+  getCourseById,
+  updateCourse,
+} from '@/app/api/courses/course.Controller';
 import { mockGetServerSession } from '../setup';
 
 async function createPublishedCourse(overrides: Partial<Record<string, unknown>> = {}) {
@@ -21,6 +27,14 @@ async function createPublishedCourse(overrides: Partial<Record<string, unknown>>
 
 function getRequest(url: string) {
   return new Request(url);
+}
+
+function jsonRequest(body: unknown) {
+  return new Request('http://localhost/api/courses', {
+    method: 'POST',
+    body: JSON.stringify(body),
+    headers: { 'Content-Type': 'application/json' },
+  });
 }
 
 describe('course controller — soft delete', () => {
@@ -60,13 +74,92 @@ describe('course controller — soft delete', () => {
 
     await expect(getCourseById(course._id.toString())).rejects.toMatchObject({ statusCode: 404 });
   });
+});
 
-  it('rejects deleting a course owned by a different instructor', async () => {
+describe('course controller — role & ownership matrix', () => {
+  beforeEach(async () => {
+    await createConnection();
+  });
+
+  it('rejects course creation for a student (403)', async () => {
+    mockGetServerSession.mockResolvedValue({ user: { id: 'student-1', role: 'student' } });
+
+    await expect(
+      createCourse(
+        jsonRequest({
+          title: 'New Course',
+          courseDescription: 'desc',
+          duration: '1h',
+          category: new mongoose.Types.ObjectId().toString(),
+        }),
+      ),
+    ).rejects.toMatchObject({ statusCode: 403 });
+    expect(await Course.countDocuments({})).toBe(0);
+  });
+
+  it('lets an instructor create a course, owned by them', async () => {
+    const instructorId = new mongoose.Types.ObjectId().toString();
+    mockGetServerSession.mockResolvedValue({ user: { id: instructorId, role: 'instructor' } });
+
+    const response = await createCourse(
+      jsonRequest({
+        title: 'Instructor A Course',
+        courseDescription: 'desc',
+        duration: '1h',
+        category: new mongoose.Types.ObjectId().toString(),
+      }),
+    );
+    expect(response.status).toBe(201);
+
+    const stored = await Course.findOne({ title: 'Instructor A Course' });
+    expect(stored?.instructor?.toString()).toBe(instructorId);
+  });
+
+  it('blocks instructor B from updating or deleting instructor A\'s course', async () => {
+    const instructorA = new mongoose.Types.ObjectId().toString();
+    const instructorB = new mongoose.Types.ObjectId().toString();
+    const course = await createPublishedCourse({ instructor: instructorA });
+
+    mockGetServerSession.mockResolvedValue({ user: { id: instructorB, role: 'instructor' } });
+
+    await expect(
+      updateCourse(jsonRequest({ title: 'Hijacked' }), course._id.toString()),
+    ).rejects.toMatchObject({ statusCode: 403 });
+    await expect(deleteCourse(course._id.toString())).rejects.toMatchObject({ statusCode: 403 });
+
+    const unchanged = await Course.findById(course._id);
+    expect(unchanged?.title).toBe('Intro to Testing');
+    expect(unchanged?.isDeleted).toBe(false);
+  });
+
+  it.each([['super_admin'], ['admin']])(
+    'lets %s mutate a course owned by someone else entirely',
+    async (role) => {
+      const instructorA = new mongoose.Types.ObjectId().toString();
+      const course = await createPublishedCourse({ instructor: instructorA });
+
+      mockGetServerSession.mockResolvedValue({
+        user: { id: new mongoose.Types.ObjectId().toString(), role },
+      });
+
+      const updateResponse = await updateCourse(
+        jsonRequest({ title: 'Updated By Admin' }),
+        course._id.toString(),
+      );
+      expect(updateResponse.status).toBe(200);
+
+      const deleteResponse = await deleteCourse(course._id.toString());
+      expect(deleteResponse.status).toBe(200);
+    },
+  );
+
+  it('rejects update/delete for a student regardless of ownership', async () => {
     const course = await createPublishedCourse();
-    mockGetServerSession.mockResolvedValue({
-      user: { id: new mongoose.Types.ObjectId().toString(), role: 'admin' },
-    });
+    mockGetServerSession.mockResolvedValue({ user: { id: 'student-1', role: 'student' } });
 
+    await expect(
+      updateCourse(jsonRequest({ title: 'Hijacked' }), course._id.toString()),
+    ).rejects.toMatchObject({ statusCode: 403 });
     await expect(deleteCourse(course._id.toString())).rejects.toMatchObject({ statusCode: 403 });
   });
 });

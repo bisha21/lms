@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
+import { can } from '@/lib/rbac/permissions';
 
 const SiteHeader = () => {
   const { data: session, status } = useSession();
@@ -21,7 +22,7 @@ const SiteHeader = () => {
             <Link href="/payments" className="hover:text-gray-900">
               Payments
             </Link>
-            {session.user?.role === 'admin' && (
+            {can(session.user?.role, 'admin:overview') && (
               <Link href="/admin" className="hover:text-gray-900">
                 Admin
               </Link>

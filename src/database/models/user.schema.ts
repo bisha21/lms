@@ -1,12 +1,10 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
+import { ROLE_VALUES, Role } from '@/lib/rbac/roles';
 
 const Schema = mongoose.Schema;
 
-export enum Role {
-  ADMIN = 'admin',
-  STUDENT = 'student',
-}
+export { Role };
 
 export interface IUser extends Document {
   username: string;
@@ -30,7 +28,7 @@ const userSchema = new Schema<IUser>({
   },
   role: {
     type: String,
-    enum: [Role.ADMIN, Role.STUDENT],
+    enum: ROLE_VALUES,
     default: Role.STUDENT,
   },
   profileImage: {

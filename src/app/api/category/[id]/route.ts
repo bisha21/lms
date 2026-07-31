@@ -6,7 +6,7 @@ export const DELETE = withErrorHandling(
   async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
     await createConnection();
     const { id } = await params;
-    return deleteCategory(req, id);
+    return deleteCategory(id);
   }
 );
 
