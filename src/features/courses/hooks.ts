@@ -17,14 +17,37 @@ export function useCourses(params?: CoursesListParams) {
   });
 }
 
+export interface ICourseBySlugResult {
+  course: ICourse;
+  lessons: ILesson[];
+  averageRating: number | null;
+  reviewCount: number;
+}
+
 export function useCourseBySlug(slug: string) {
   return useQuery({
     queryKey: queryKeys.courses.bySlug(slug),
     queryFn: async () => {
       const response = await API.get(`/courses/slug/${slug}`);
-      return response.data.data as { course: ICourse; lessons: ILesson[] };
+      return response.data.data as ICourseBySlugResult;
     },
     enabled: !!slug,
+  });
+}
+
+export interface IInstructorOption {
+  _id: string;
+  username: string;
+}
+
+export function useInstructors() {
+  return useQuery({
+    queryKey: queryKeys.courses.instructors,
+    queryFn: async () => {
+      const response = await API.get('/courses/instructors');
+      return response.data.data as IInstructorOption[];
+    },
+    staleTime: 5 * 60 * 1000,
   });
 }
 
