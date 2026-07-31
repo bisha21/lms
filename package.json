@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "role:promote": "tsx scripts/promote-user-role.ts"
+    "role:promote": "tsx scripts/promote-user-role.ts",
+    "migrate:lessons-to-sections": "tsx scripts/migrate-lessons-to-sections.ts"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.6",

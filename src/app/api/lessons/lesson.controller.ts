@@ -1,9 +1,11 @@
 import { createConnection } from '@/database/db';
 import Course from '@/database/models/course.schema';
 import { Lesson } from '@/database/models/lesson';
+import { Section } from '@/database/models/section';
 import { NextResponse } from 'next/server';
 import { AppError } from '@/lib/appError';
 import { createLessonSchema, updateLessonSchema } from '@/lib/validate/lesson.schema';
+import { reorderSchema } from '@/lib/validate/section.schema';
 import { uploadVideoBuffer, destroyVideo } from '@/lib/cloudinary';
 import { requirePermission } from '../../../../middleware/auth.middleware';
 import { Action } from '@/lib/rbac/permissions';
@@ -19,9 +21,18 @@ async function requireCourseOwner(action: Action, courseId: string) {
   return { session, course };
 }
 
-export async function createLessonForCourse(req: Request, courseId: string) {
+async function requireSectionOwner(action: Action, sectionId: string) {
+  const section = await Section.findById(sectionId);
+  if (!section) {
+    throw new AppError('Section not found', 404);
+  }
+  const { session, course } = await requireCourseOwner(action, section.course.toString());
+  return { session, course, section };
+}
+
+export async function createLessonForSection(req: Request, sectionId: string) {
   await createConnection();
-  await requireCourseOwner('lesson:create', courseId);
+  const { section } = await requireSectionOwner('lesson:create', sectionId);
 
   const formData = await req.formData();
   const video = formData.get('video');
@@ -38,18 +49,36 @@ export async function createLessonForCourse(req: Request, courseId: string) {
   const buffer = Buffer.from(await video.arrayBuffer());
   const { url, publicId } = await uploadVideoBuffer(buffer, video.name);
 
-  const lastLesson = await Lesson.findOne({ course: courseId }).sort('-order');
-  const order = lastLesson ? lastLesson.order + 1 : 1;
+  const lastLesson = await Lesson.findOne({ section: sectionId }).sort('-order');
+  const order = lastLesson ? lastLesson.order + 1 : 0;
 
   const lesson = await Lesson.create({
     ...data,
-    course: courseId,
+    course: section.course,
+    section: sectionId,
     videoUrl: url,
     videoPublicId: publicId,
     order,
   });
 
   return NextResponse.json({ message: 'Lesson created!!', data: lesson }, { status: 201 });
+}
+
+export async function reorderLessonsInSection(req: Request, sectionId: string) {
+  await createConnection();
+  await requireSectionOwner('lesson:update', sectionId);
+
+  const body = await req.json();
+  const { orderedIds } = reorderSchema.parse(body);
+
+  await Promise.all(
+    orderedIds.map((id, index) =>
+      Lesson.updateOne({ _id: id, section: sectionId }, { order: index })
+    )
+  );
+
+  const lessons = await Lesson.find({ section: sectionId }).sort('order');
+  return NextResponse.json({ data: lessons }, { status: 200 });
 }
 
 export async function updateLesson(req: Request, id: string) {

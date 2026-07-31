@@ -62,11 +62,12 @@ export async function middleware(req: NextRequest) {
         { status: 403 },
       );
     }
-    // Course/lesson mutations: Super Admin, Admin, and Instructor may all attempt these
-    // (ownership is checked server-side); Student may not.
+    // Course/lesson/section mutations: Super Admin, Admin, and Instructor may all attempt
+    // these (ownership is checked server-side); Student may not.
     const needsCourseManage =
       (req.method !== 'GET' && pathname.startsWith('/api/courses')) ||
-      pathname.startsWith('/api/lessons'); // PATCH/DELETE only — no GET route exists here
+      pathname.startsWith('/api/lessons') || // PATCH/DELETE only — no GET route exists here
+      pathname.startsWith('/api/sections'); // POST/PATCH/DELETE only — no GET route exists here
     if (needsCourseManage && !can(role, 'course:create')) {
       return NextResponse.json(
         { message: "You don't have permission to perform this action" },
@@ -107,6 +108,7 @@ export const config = {
     '/api/category/:path*',
     '/api/courses/:path*',
     '/api/lessons/:path*',
+    '/api/sections/:path*',
     '/api/enrollments/:path*',
     '/api/progress/:path*',
     '/api/payments/:path*',

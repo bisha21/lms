@@ -15,6 +15,9 @@ export type Action =
   | 'lesson:create'
   | 'lesson:update'
   | 'lesson:delete'
+  | 'section:create'
+  | 'section:update'
+  | 'section:delete'
   | 'admin:overview';
 
 const PERMISSIONS: Record<Action, Role[]> = {
@@ -27,6 +30,9 @@ const PERMISSIONS: Record<Action, Role[]> = {
   'lesson:create': [Role.SUPER_ADMIN, Role.ADMIN, Role.INSTRUCTOR],
   'lesson:update': [Role.SUPER_ADMIN, Role.ADMIN, Role.INSTRUCTOR],
   'lesson:delete': [Role.SUPER_ADMIN, Role.ADMIN, Role.INSTRUCTOR],
+  'section:create': [Role.SUPER_ADMIN, Role.ADMIN, Role.INSTRUCTOR],
+  'section:update': [Role.SUPER_ADMIN, Role.ADMIN, Role.INSTRUCTOR],
+  'section:delete': [Role.SUPER_ADMIN, Role.ADMIN, Role.INSTRUCTOR],
   'admin:overview': [Role.SUPER_ADMIN, Role.ADMIN],
 };
 
