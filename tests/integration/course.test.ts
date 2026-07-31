@@ -3,11 +3,14 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { createConnection } from '@/database/db';
 import Category from '@/database/models/category';
 import Course from '@/database/models/course.schema';
+import { Lesson } from '@/database/models/lesson';
+import { Section } from '@/database/models/section';
 import {
   createCourse,
   deleteCourse,
   getAllCourses,
   getCourseById,
+  getCourseLessons,
   updateCourse,
 } from '@/app/api/courses/course.Controller';
 import { mockGetServerSession } from '../setup';
@@ -161,5 +164,68 @@ describe('course controller — role & ownership matrix', () => {
       updateCourse(jsonRequest({ title: 'Hijacked' }), course._id.toString()),
     ).rejects.toMatchObject({ statusCode: 403 });
     await expect(deleteCourse(course._id.toString())).rejects.toMatchObject({ statusCode: 403 });
+  });
+});
+
+describe('course controller — flat lesson list is sorted by (section.order, lesson.order)', () => {
+  beforeEach(async () => {
+    await createConnection();
+  });
+
+  it('sorts lessons by their section order first, then their own order within it', async () => {
+    const course = await createPublishedCourse();
+    // Sections created out of the order we want them to sort in, to prove sorting
+    // isn't accidentally relying on creation/insertion order.
+    const sectionB = await Section.create({ course: course._id, title: 'Section B', order: 1 });
+    const sectionA = await Section.create({ course: course._id, title: 'Section A', order: 0 });
+
+    await Lesson.create([
+      {
+        course: course._id,
+        section: sectionB._id,
+        title: 'B2',
+        description: 'desc',
+        videoUrl: 'https://cdn.example.com/b2.mp4',
+        order: 1,
+      },
+      {
+        course: course._id,
+        section: sectionA._id,
+        title: 'A1',
+        description: 'desc',
+        videoUrl: 'https://cdn.example.com/a1.mp4',
+        order: 0,
+      },
+      {
+        course: course._id,
+        section: sectionB._id,
+        title: 'B1',
+        description: 'desc',
+        videoUrl: 'https://cdn.example.com/b1.mp4',
+        order: 0,
+      },
+      {
+        course: course._id,
+        section: sectionA._id,
+        title: 'A2',
+        description: 'desc',
+        videoUrl: 'https://cdn.example.com/a2.mp4',
+        order: 1,
+      },
+    ]);
+
+    mockGetServerSession.mockResolvedValue({
+      user: { id: course.instructor.toString(), role: 'admin' },
+    });
+
+    const response = await getCourseLessons(course._id.toString());
+    const body = await response.json();
+
+    expect(body.data.map((lesson: { title: string }) => lesson.title)).toEqual([
+      'A1',
+      'A2',
+      'B1',
+      'B2',
+    ]);
   });
 });
