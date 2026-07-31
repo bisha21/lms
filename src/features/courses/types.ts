@@ -1,6 +1,13 @@
 import { ICategory } from '@/features/categories/types';
 
 export type CourseStatusValue = 'draft' | 'published';
+export type CourseLevelValue = 'beginner' | 'intermediate' | 'advanced';
+
+export interface IInstructorSummary {
+  _id: string;
+  username: string;
+  profileImage?: string;
+}
 
 export interface ICourseForData {
   title: string;
@@ -10,12 +17,19 @@ export interface ICourseForData {
   duration: string;
   thumbnail?: string;
   status?: CourseStatusValue;
+  level?: CourseLevelValue;
+  language?: string;
   _id?: string;
 }
 
 export interface ICourse extends ICourseForData {
   slug: string;
   createdAt: string;
+  instructor?: IInstructorSummary | string;
+  averageRating?: number | null;
+  reviewCount?: number;
+  enrollmentCount?: number;
+  salesCount?: number;
 }
 
 export interface ICoursesMeta {

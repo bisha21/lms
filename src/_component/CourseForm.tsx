@@ -15,6 +15,8 @@ const emptyForm: ICourseForData = {
   category: '',
   duration: '',
   thumbnail: '',
+  level: undefined,
+  language: 'English',
 };
 
 const CourseForm: React.FC<CourseFormProps> = ({ defaultValues }) => {
@@ -120,6 +122,37 @@ const CourseForm: React.FC<CourseFormProps> = ({ defaultValues }) => {
               </option>
             ))}
           </select>
+        </div>
+        <div className="flex justify-between gap-4">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Level
+            </label>
+            <select
+              name="level"
+              onChange={handleChange}
+              value={data.level ?? ''}
+              className="w-full mt-1 p-2 border border-gray-300 dark:border-gray-600 rounded-md"
+            >
+              <option value="">Not specified</option>
+              <option value="beginner">Beginner</option>
+              <option value="intermediate">Intermediate</option>
+              <option value="advanced">Advanced</option>
+            </select>
+          </div>
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Language
+            </label>
+            <input
+              onChange={handleChange}
+              name="language"
+              type="text"
+              value={data.language ?? ''}
+              className="w-full mt-1 p-2 border border-gray-300 dark:border-gray-600 rounded-md"
+              placeholder="English"
+            />
+          </div>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">

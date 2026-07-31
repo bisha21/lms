@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { createConnection } from '@/database/db';
 import Course, { CourseStatus } from '@/database/models/course.schema';
 // Registers the "Category"/"Section" models so `.populate()` below can resolve them —
@@ -5,9 +6,11 @@ import Course, { CourseStatus } from '@/database/models/course.schema';
 // anything else in this request touched those modules first.
 import '@/database/models/category';
 import '@/database/models/section';
+import User from '@/database/models/user.schema';
 import { Lesson } from '@/database/models/lesson';
 import { ISection } from '@/database/models/section';
 import { Enrollment } from '@/database/models/enrollment.model';
+import { Review } from '@/database/models/review';
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -16,6 +19,31 @@ import { createCourseSchema, updateCourseSchema } from '@/lib/validate/course.sc
 import { requireAuth, requirePermission } from '../../../../middleware/auth.middleware';
 import { assertCourseOwnership, ownsCourse } from '@/lib/rbac/ownership';
 import { bypassesOwnership } from '@/lib/rbac/permissions';
+
+const COURSE_SORT_KEYS = ['newest', 'price', 'rating', 'popular', 'best-selling'] as const;
+type CourseSortKey = (typeof COURSE_SORT_KEYS)[number];
+
+function isCourseSortKey(value: string | null): value is CourseSortKey {
+  return !!value && (COURSE_SORT_KEYS as readonly string[]).includes(value);
+}
+
+function sortStageFor(sort: CourseSortKey): Record<string, 1 | -1> {
+  switch (sort) {
+    case 'price':
+      return { coursePrice: 1, _id: -1 };
+    case 'rating':
+      // averageRating is null for zero-review courses — MongoDB sorts null as the lowest
+      // value, so descending naturally puts unrated courses last.
+      return { averageRating: -1, _id: -1 };
+    case 'popular':
+      return { enrollmentCount: -1, _id: -1 };
+    case 'best-selling':
+      return { salesCount: -1, _id: -1 };
+    case 'newest':
+    default:
+      return { createdAt: -1, _id: -1 };
+  }
+}
 
 interface SortableLesson {
   order: number;
@@ -73,26 +101,127 @@ export const getAllCourses = async (req: Request) => {
   const limit = Math.max(1, Number(searchParams.get('limit')) || 10);
   const category = searchParams.get('category');
   const search = searchParams.get('search');
+  const level = searchParams.get('level');
+  const language = searchParams.get('language');
+  const instructor = searchParams.get('instructor');
+  const minPrice = searchParams.get('minPrice');
+  const maxPrice = searchParams.get('maxPrice');
+  const minRating = searchParams.get('minRating');
+  const sortParam = searchParams.get('sort');
+  const sort: CourseSortKey = isCourseSortKey(sortParam) ? sortParam : 'newest';
 
-  const filter: Record<string, unknown> = { isDeleted: false };
+  const match: Record<string, unknown> = { isDeleted: false };
   if (!canSeeAllCourses) {
-    filter.status = CourseStatus.PUBLISHED;
+    match.status = CourseStatus.PUBLISHED;
   }
-  if (category) {
-    filter.category = category;
+  if (category && mongoose.isValidObjectId(category)) {
+    match.category = new mongoose.Types.ObjectId(category);
+  }
+  if (instructor && mongoose.isValidObjectId(instructor)) {
+    match.instructor = new mongoose.Types.ObjectId(instructor);
+  }
+  if (level) {
+    match.level = level;
+  }
+  if (language) {
+    match.language = { $regex: `^${language}$`, $options: 'i' };
   }
   if (search) {
-    filter.title = { $regex: search, $options: 'i' };
+    match.title = { $regex: search, $options: 'i' };
+  }
+  if (minPrice || maxPrice) {
+    const priceRange: Record<string, number> = {};
+    if (minPrice) priceRange.$gte = Number(minPrice);
+    if (maxPrice) priceRange.$lte = Number(maxPrice);
+    match.coursePrice = priceRange;
   }
 
-  const [data, total] = await Promise.all([
-    Course.find(filter)
-      .populate('category')
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .sort({ createdAt: -1 }),
-    Course.countDocuments(filter),
-  ]);
+  const ratingMatchStage =
+    minRating && !Number.isNaN(Number(minRating))
+      ? [{ $match: { averageRating: { $gte: Number(minRating) } } }]
+      : [];
+
+  const pipeline = [
+    { $match: match },
+    {
+      $lookup: { from: 'reviews', localField: '_id', foreignField: 'course', as: 'reviews' },
+    },
+    {
+      $lookup: {
+        from: 'enrollments',
+        localField: '_id',
+        foreignField: 'course',
+        as: 'enrollments',
+      },
+    },
+    {
+      $lookup: {
+        from: 'payments',
+        let: { courseId: '$_id' },
+        pipeline: [
+          {
+            $match: {
+              $expr: { $and: [{ $eq: ['$course', '$$courseId'] }, { $eq: ['$status', 'completed'] }] },
+            },
+          },
+        ],
+        as: 'completedPayments',
+      },
+    },
+    {
+      $addFields: {
+        reviewCount: { $size: '$reviews' },
+        averageRating: {
+          $cond: [
+            { $gt: [{ $size: '$reviews' }, 0] },
+            { $round: [{ $avg: '$reviews.rating' }, 1] },
+            null,
+          ],
+        },
+        enrollmentCount: { $size: '$enrollments' },
+        salesCount: { $size: '$completedPayments' },
+      },
+    },
+    ...ratingMatchStage,
+    {
+      $lookup: { from: 'categories', localField: 'category', foreignField: '_id', as: 'category' },
+    },
+    { $unwind: { path: '$category', preserveNullAndEmptyArrays: true } },
+    {
+      $lookup: { from: 'users', localField: 'instructor', foreignField: '_id', as: 'instructor' },
+    },
+    { $unwind: { path: '$instructor', preserveNullAndEmptyArrays: true } },
+    {
+      // Whitelist, not exclude — a raw $lookup on `users` bypasses Mongoose's
+      // `password: { select: false }`, so this must name exactly what's safe to expose,
+      // not try to blacklist what isn't.
+      $addFields: {
+        instructor: {
+          $cond: [
+            { $ifNull: ['$instructor._id', false] },
+            {
+              _id: '$instructor._id',
+              username: '$instructor.username',
+              profileImage: '$instructor.profileImage',
+            },
+            null,
+          ],
+        },
+      },
+    },
+    { $project: { reviews: 0, enrollments: 0, completedPayments: 0 } },
+    { $sort: sortStageFor(sort) },
+    {
+      $facet: {
+        data: [{ $skip: (page - 1) * limit }, { $limit: limit }],
+        totalCount: [{ $count: 'count' }],
+      },
+    },
+  ];
+
+  const [result] = await Course.aggregate(pipeline);
+  const data = result?.data ?? [];
+  const total = result?.totalCount?.[0]?.count ?? 0;
 
   return NextResponse.json({
     message: 'courses fetched!!',
@@ -106,19 +235,48 @@ export const getCourseBySlug = async (slug: string) => {
     slug,
     status: CourseStatus.PUBLISHED,
     isDeleted: false,
-  }).populate('category');
+  })
+    .populate('category')
+    .populate('instructor', 'username profileImage');
   if (!course) {
     throw new AppError('No course found', 404);
   }
 
-  const lessons = await Lesson.find({ course: course._id })
-    .select('title order durationSeconds section')
-    .populate<{ section: ISection | null }>('section');
+  const [lessons, [ratingSummary]] = await Promise.all([
+    Lesson.find({ course: course._id })
+      .select('title order durationSeconds section')
+      .populate<{ section: ISection | null }>('section'),
+    Review.aggregate([
+      { $match: { course: course._id } },
+      { $group: { _id: null, averageRating: { $avg: '$rating' }, reviewCount: { $sum: 1 } } },
+    ]),
+  ]);
 
   return NextResponse.json(
-    { data: { course, lessons: sortBySectionThenOrder(lessons) } },
+    {
+      data: {
+        course,
+        lessons: sortBySectionThenOrder(lessons),
+        averageRating: ratingSummary ? Math.round(ratingSummary.averageRating * 10) / 10 : null,
+        reviewCount: ratingSummary?.reviewCount ?? 0,
+      },
+    },
     { status: 200 }
   );
+};
+
+// Backs the catalog's instructor filter dropdown — only instructors who currently have at
+// least one published, non-deleted course (not just anyone who's ever created one).
+export const getInstructorsWithCourses = async () => {
+  const instructorIds = await Course.distinct('instructor', {
+    status: CourseStatus.PUBLISHED,
+    isDeleted: false,
+  });
+  const instructors = await User.find({ _id: { $in: instructorIds } })
+    .select('username')
+    .sort('username');
+
+  return NextResponse.json({ data: instructors }, { status: 200 });
 };
 
 export const getCourseById = async (id: string) => {

@@ -6,6 +6,12 @@ export enum CourseStatus {
   PUBLISHED = 'published',
 }
 
+export enum CourseLevel {
+  BEGINNER = 'beginner',
+  INTERMEDIATE = 'intermediate',
+  ADVANCED = 'advanced',
+}
+
 interface Course extends Document {
   title: string;
   slug: string;
@@ -16,6 +22,8 @@ interface Course extends Document {
   category: mongoose.Types.ObjectId;
   instructor: mongoose.Types.ObjectId;
   status: CourseStatus;
+  level?: CourseLevel;
+  language: string;
   isDeleted: boolean;
   createdAt: Date;
 }
@@ -57,6 +65,14 @@ const courseSchema = new Schema({
     type: String,
     enum: Object.values(CourseStatus),
     default: CourseStatus.DRAFT,
+  },
+  level: {
+    type: String,
+    enum: Object.values(CourseLevel),
+  },
+  language: {
+    type: String,
+    default: 'English',
   },
   isDeleted: {
     type: Boolean,

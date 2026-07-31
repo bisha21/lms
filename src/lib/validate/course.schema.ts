@@ -7,6 +7,8 @@ export const createCourseSchema = z.object({
   duration: z.string().min(1, 'Duration is required'),
   category: z.string().min(1, 'Category is required'),
   thumbnail: z.string().optional(),
+  level: z.enum(['beginner', 'intermediate', 'advanced']).optional(),
+  language: z.string().min(1).optional(),
 });
 
 export const updateCourseSchema = createCourseSchema.partial().extend({
