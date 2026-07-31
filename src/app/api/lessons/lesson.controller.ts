@@ -5,26 +5,23 @@ import { NextResponse } from 'next/server';
 import { AppError } from '@/lib/appError';
 import { createLessonSchema, updateLessonSchema } from '@/lib/validate/lesson.schema';
 import { uploadVideoBuffer, destroyVideo } from '@/lib/cloudinary';
-import { requireAuth } from '../../../../middleware/auth.middleware';
+import { requirePermission } from '../../../../middleware/auth.middleware';
+import { Action } from '@/lib/rbac/permissions';
+import { assertCourseOwnership } from '@/lib/rbac/ownership';
 
-async function requireCourseOwner(courseId: string) {
-  const session = await requireAuth();
-  if (session.user.role !== 'admin') {
-    throw new AppError('You dont have permission to perform this action', 403);
-  }
+async function requireCourseOwner(action: Action, courseId: string) {
+  const session = await requirePermission(action);
   const course = await Course.findOne({ _id: courseId, isDeleted: false });
   if (!course) {
     throw new AppError('Course not found', 404);
   }
-  if (course.instructor && !course.instructor.equals(session.user.id)) {
-    throw new AppError('You do not own this course', 403);
-  }
+  assertCourseOwnership(course, session);
   return { session, course };
 }
 
 export async function createLessonForCourse(req: Request, courseId: string) {
   await createConnection();
-  await requireCourseOwner(courseId);
+  await requireCourseOwner('lesson:create', courseId);
 
   const formData = await req.formData();
   const video = formData.get('video');
@@ -61,7 +58,7 @@ export async function updateLesson(req: Request, id: string) {
   if (!lesson) {
     throw new AppError('Lesson not found', 404);
   }
-  await requireCourseOwner(lesson.course.toString());
+  await requireCourseOwner('lesson:update', lesson.course.toString());
 
   const body = await req.json();
   const data = updateLessonSchema.parse(body);
@@ -78,7 +75,7 @@ export async function deleteLesson(id: string) {
   if (!lesson) {
     throw new AppError('Lesson not found', 404);
   }
-  await requireCourseOwner(lesson.course.toString());
+  await requireCourseOwner('lesson:delete', lesson.course.toString());
 
   if (lesson.videoPublicId) {
     await destroyVideo(lesson.videoPublicId);

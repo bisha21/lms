@@ -3,15 +3,11 @@ import Course from '@/database/models/course.schema';
 import { Enrollment } from '@/database/models/enrollment.model';
 import { Payment, PaymentStatus } from '@/database/models/payment.model';
 import { NextResponse } from 'next/server';
-import { AppError } from '@/lib/appError';
-import { requireAuth } from '../../../../middleware/auth.middleware';
+import { requirePermission } from '../../../../middleware/auth.middleware';
 
 export async function getOverview() {
   await createConnection();
-  const session = await requireAuth();
-  if (session.user.role !== 'admin') {
-    throw new AppError('You dont have permission to perform this action', 403);
-  }
+  await requirePermission('admin:overview');
 
   const courses = await Course.find({ isDeleted: false }).select('title coursePrice');
 

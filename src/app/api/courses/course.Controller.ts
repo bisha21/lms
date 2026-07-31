@@ -7,32 +7,17 @@ import '@/database/models/category';
 import { Lesson } from '@/database/models/lesson';
 import { Enrollment } from '@/database/models/enrollment.model';
 import { NextResponse } from 'next/server';
-import { getServerSession, Session } from 'next-auth';
+import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { AppError } from '@/lib/appError';
 import { createCourseSchema, updateCourseSchema } from '@/lib/validate/course.schema';
-import { requireAuth } from '../../../../middleware/auth.middleware';
-
-async function requireAdmin(): Promise<Session> {
-  const session = await requireAuth();
-  if (session.user.role !== 'admin') {
-    throw new AppError('You dont have permission to perform this action', 403);
-  }
-  return session;
-}
-
-function assertOwnership(
-  course: { instructor?: { equals: (id: string) => boolean } },
-  userId: string
-) {
-  if (course.instructor && !course.instructor.equals(userId)) {
-    throw new AppError('You do not own this course', 403);
-  }
-}
+import { requireAuth, requirePermission } from '../../../../middleware/auth.middleware';
+import { assertCourseOwnership, ownsCourse } from '@/lib/rbac/ownership';
+import { bypassesOwnership } from '@/lib/rbac/permissions';
 
 export async function createCourse(req: Request) {
   await createConnection();
-  const session = await requireAdmin();
+  const session = await requirePermission('course:create');
 
   const body = await req.json();
   const data = createCourseSchema.parse(body);
@@ -52,7 +37,10 @@ export async function createCourse(req: Request) {
 export const getAllCourses = async (req: Request) => {
   await createConnection();
   const session = await getServerSession(authOptions);
-  const isAdmin = session?.user?.role === 'admin';
+  // Super Admin/Admin see every course (draft or published); everyone else — including
+  // Instructor — only sees the published catalog here. Scoping this to "my own drafts"
+  // for instructors is a listing/dashboard change, out of scope for this phase.
+  const canSeeAllCourses = bypassesOwnership(session?.user?.role);
 
   const { searchParams } = new URL(req.url);
   const page = Math.max(1, Number(searchParams.get('page')) || 1);
@@ -61,7 +49,7 @@ export const getAllCourses = async (req: Request) => {
   const search = searchParams.get('search');
 
   const filter: Record<string, unknown> = { isDeleted: false };
-  if (!isAdmin) {
+  if (!canSeeAllCourses) {
     filter.status = CourseStatus.PUBLISHED;
   }
   if (category) {
@@ -113,13 +101,13 @@ export const getCourseById = async (id: string) => {
 };
 
 export const deleteCourse = async (id: string) => {
-  const session = await requireAdmin();
+  const session = await requirePermission('course:delete');
 
   const course = await Course.findById(id);
   if (!course || course.isDeleted) {
     throw new AppError('Course not found', 404);
   }
-  assertOwnership(course, session.user.id);
+  assertCourseOwnership(course, session);
 
   course.isDeleted = true;
   await course.save();
@@ -128,13 +116,13 @@ export const deleteCourse = async (id: string) => {
 };
 
 export const updateCourse = async (req: Request, id: string) => {
-  const session = await requireAdmin();
+  const session = await requirePermission('course:update');
 
   const course = await Course.findOne({ _id: id, isDeleted: false });
   if (!course) {
     throw new AppError('Course not found', 404);
   }
-  assertOwnership(course, session.user.id);
+  assertCourseOwnership(course, session);
 
   const body = await req.json();
   const data = updateCourseSchema.parse(body);
@@ -153,11 +141,9 @@ export const getCourseLessons = async (id: string) => {
     throw new AppError('Course not found', 404);
   }
 
-  const isOwnerAdmin =
-    session.user.role === 'admin' &&
-    (!course.instructor || course.instructor.equals(session.user.id));
-
-  if (!isOwnerAdmin) {
+  // Super Admin/Admin, or the instructor who owns this course, can view its lessons
+  // without being enrolled. Everyone else (students, other instructors) must be enrolled.
+  if (!ownsCourse(course, session)) {
     const enrolled = await Enrollment.findOne({ student: session.user.id, course: id });
     if (!enrolled) {
       throw new AppError('You must be enrolled to view this content', 403);

@@ -1,5 +1,6 @@
 import { getToken } from 'next-auth/jwt';
 import { NextRequest, NextResponse } from 'next/server';
+import { can } from '@/lib/rbac/permissions';
 
 // Edge-level, coarse-grained gate. Complements (does not replace) the per-route
 // requireAuth()/authMiddleware() + ownership checks in middleware/auth.middleware.ts,
@@ -39,25 +40,39 @@ export async function middleware(req: NextRequest) {
   }
 
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+  const role = token?.role;
 
   if (isApi) {
     if (!token) {
       return NextResponse.json({ message: 'You must be logged in' }, { status: 401 });
     }
+    // Coarse, role-only pre-filter against the same permission matrix the server-side
+    // guards use (src/lib/rbac/permissions.ts) — a fast-fail for the common "wrong role
+    // entirely" case. Exact per-action correctness and course/lesson ownership (which
+    // needs a DB lookup this layer doesn't have) are still enforced server-side via
+    // requirePermission()/assertCourseOwnership().
     // /api/admin/* needs admin for every method (including GET, e.g. the overview report).
     // /api/category/* only needs admin for mutations — GET is public (handled above).
     const needsAdmin =
       pathname.startsWith('/api/admin') ||
       (req.method !== 'GET' && pathname.startsWith('/api/category'));
-    if (needsAdmin && token.role !== 'admin') {
+    if (needsAdmin && !can(role, 'admin:overview')) {
       return NextResponse.json(
         { message: "You don't have permission to perform this action" },
         { status: 403 },
       );
     }
-    // Role for course/lesson mutations and ownership checks are left to the route
-    // handlers (requireAdmin()/assertOwnership() in course.Controller.ts) since they
-    // need a DB lookup this layer doesn't have.
+    // Course/lesson mutations: Super Admin, Admin, and Instructor may all attempt these
+    // (ownership is checked server-side); Student may not.
+    const needsCourseManage =
+      (req.method !== 'GET' && pathname.startsWith('/api/courses')) ||
+      pathname.startsWith('/api/lessons'); // PATCH/DELETE only — no GET route exists here
+    if (needsCourseManage && !can(role, 'course:create')) {
+      return NextResponse.json(
+        { message: "You don't have permission to perform this action" },
+        { status: 403 },
+      );
+    }
     return NextResponse.next();
   }
 
@@ -76,7 +91,7 @@ export async function middleware(req: NextRequest) {
     loginUrl.searchParams.set('callbackUrl', pathname);
     return NextResponse.redirect(loginUrl);
   }
-  if (isAdminPage && token.role !== 'admin') {
+  if (isAdminPage && !can(role, 'admin:overview')) {
     return NextResponse.redirect(new URL('/', req.url));
   }
   return NextResponse.next();

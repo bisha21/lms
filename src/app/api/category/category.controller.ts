@@ -1,16 +1,14 @@
 import { createConnection } from '@/database/db';
 import Category from '@/database/models/category';
-import authMiddleware from '../../../../middleware/auth.middleware';
+import { requirePermission } from '../../../../middleware/auth.middleware';
 import { AppError } from '@/lib/appError';
 import { createCategorySchema, updateCategorySchema } from '@/lib/validate/category.schema';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
 export async function createCategory(req: Request) {
   await createConnection();
-  const response = await authMiddleware(req as NextRequest);
-  if (response.status === 401) {
-    return response;
-  }
+  await requirePermission('category:create');
+
   const body = await req.json();
   const { name, description } = createCategorySchema.parse(body);
 
@@ -33,11 +31,9 @@ export async function getAllCategory() {
   });
 }
 
-export async function deleteCategory(req: Request, id: string) {
-  const response = await authMiddleware(req as NextRequest);
-  if (response.status === 401) {
-    return response;
-  }
+export async function deleteCategory(id: string) {
+  await requirePermission('category:delete');
+
   const category = await Category.findByIdAndDelete(id);
   if (!category) {
     throw new AppError('Category not found', 404);
@@ -49,10 +45,8 @@ export async function deleteCategory(req: Request, id: string) {
 }
 
 export async function updateCategory(req: Request, id: string) {
-  const response = await authMiddleware(req as NextRequest);
-  if (response.status === 401) {
-    return response;
-  }
+  await requirePermission('category:update');
+
   const body = await req.json();
   const data = updateCategorySchema.parse(body);
 
