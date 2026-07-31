@@ -1,10 +1,12 @@
 import { createConnection } from '@/database/db';
 import Course, { CourseStatus } from '@/database/models/course.schema';
-// Registers the "Category" model so `.populate('category')` below can resolve
-// it — Mongoose needs the schema registered before populate runs, regardless
-// of whether anything else in this request touched the Category module first.
+// Registers the "Category"/"Section" models so `.populate()` below can resolve them —
+// Mongoose needs the schema registered before populate runs, regardless of whether
+// anything else in this request touched those modules first.
 import '@/database/models/category';
+import '@/database/models/section';
 import { Lesson } from '@/database/models/lesson';
+import { ISection } from '@/database/models/section';
 import { Enrollment } from '@/database/models/enrollment.model';
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
@@ -14,6 +16,30 @@ import { createCourseSchema, updateCourseSchema } from '@/lib/validate/course.sc
 import { requireAuth, requirePermission } from '../../../../middleware/auth.middleware';
 import { assertCourseOwnership, ownsCourse } from '@/lib/rbac/ownership';
 import { bypassesOwnership } from '@/lib/rbac/permissions';
+
+interface SortableLesson {
+  order: number;
+  section?: ISection | null;
+}
+
+// Lessons carry their own `order`, scoped to whichever section they're in (not globally
+// unique per course) — so the flat, course-wide list the player/curriculum-summary
+// consume has to be sorted by (section.order, lesson.order), not just lesson.order.
+// Lessons with no section (pre-Section-model data that hasn't been migrated yet — see
+// scripts/migrate-lessons-to-sections.ts) sort after everything else.
+//
+// T is left unconstrained (Mongoose's populate<>() + select() typing doesn't statically
+// preserve schema fields like `order` well enough to satisfy a constrained generic here) —
+// the cast below is safe because callers always populate('section') and select 'order'
+// before calling this.
+function sortBySectionThenOrder<T>(lessons: T[]): T[] {
+  return [...lessons].sort((a, b) => {
+    const lessonA = a as unknown as SortableLesson;
+    const lessonB = b as unknown as SortableLesson;
+    const sectionOrderDiff = (lessonA.section?.order ?? Infinity) - (lessonB.section?.order ?? Infinity);
+    return sectionOrderDiff !== 0 ? sectionOrderDiff : lessonA.order - lessonB.order;
+  });
+}
 
 export async function createCourse(req: Request) {
   await createConnection();
@@ -86,10 +112,13 @@ export const getCourseBySlug = async (slug: string) => {
   }
 
   const lessons = await Lesson.find({ course: course._id })
-    .select('title order durationSeconds')
-    .sort('order');
+    .select('title order durationSeconds section')
+    .populate<{ section: ISection | null }>('section');
 
-  return NextResponse.json({ data: { course, lessons } }, { status: 200 });
+  return NextResponse.json(
+    { data: { course, lessons: sortBySectionThenOrder(lessons) } },
+    { status: 200 }
+  );
 };
 
 export const getCourseById = async (id: string) => {
@@ -150,6 +179,8 @@ export const getCourseLessons = async (id: string) => {
     }
   }
 
-  const lessons = await Lesson.find({ course: id }).sort('order');
-  return NextResponse.json({ data: lessons }, { status: 200 });
+  const lessons = await Lesson.find({ course: id }).populate<{ section: ISection | null }>(
+    'section'
+  );
+  return NextResponse.json({ data: sortBySectionThenOrder(lessons) }, { status: 200 });
 };

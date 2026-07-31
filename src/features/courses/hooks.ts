@@ -28,6 +28,17 @@ export function useCourseBySlug(slug: string) {
   });
 }
 
+export function useCourse(id: string) {
+  return useQuery({
+    queryKey: queryKeys.courses.detail(id),
+    queryFn: async () => {
+      const response = await API.get(`/courses/${id}`);
+      return response.data.data as ICourse;
+    },
+    enabled: !!id,
+  });
+}
+
 function invalidateCourseLists(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey: ['courses', 'list'] });
 }
@@ -61,8 +72,9 @@ export function useUpdateCourse() {
       const response = await API.patch(`/courses/${id}`, data);
       return response.data.data as ICourse;
     },
-    onSuccess: () => {
+    onSuccess: (_result, variables) => {
       invalidateCourseLists(queryClient);
+      queryClient.invalidateQueries({ queryKey: queryKeys.courses.detail(variables.id) });
       toast.success('Course updated successfully');
       dispatch(closeModal());
     },
