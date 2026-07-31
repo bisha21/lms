@@ -38,6 +38,15 @@ export const queryKeys = {
   payments: {
     mine: ['payments', 'me'] as const,
   },
+  cart: {
+    mine: ['cart', 'me'] as const,
+  },
+  wishlist: {
+    mine: ['wishlist', 'me'] as const,
+  },
+  orders: {
+    detail: (id: string) => ['orders', 'detail', id] as const,
+  },
   progress: {
     forCourse: (courseId: string) => ['progress', courseId] as const,
   },

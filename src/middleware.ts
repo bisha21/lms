@@ -55,6 +55,7 @@ export async function middleware(req: NextRequest) {
     // /api/category/* only needs admin for mutations — GET is public (handled above).
     const needsAdmin =
       pathname.startsWith('/api/admin') ||
+      pathname.startsWith('/api/coupons') || // admin for every method — listing codes is itself sensitive
       (req.method !== 'GET' && pathname.startsWith('/api/category'));
     if (needsAdmin && !can(role, 'admin:overview')) {
       return NextResponse.json(
@@ -82,6 +83,9 @@ export async function middleware(req: NextRequest) {
     isAdminPage ||
     pathname.startsWith('/my-courses') ||
     pathname.startsWith('/payments') ||
+    pathname.startsWith('/cart') ||
+    pathname.startsWith('/wishlist') ||
+    pathname.startsWith('/checkout') ||
     isLearnPage(pathname);
 
   if (!isProtectedPage) {
@@ -103,6 +107,9 @@ export const config = {
     '/admin/:path*',
     '/my-courses/:path*',
     '/payments/:path*',
+    '/cart/:path*',
+    '/wishlist/:path*',
+    '/checkout/:path*',
     '/courses/:path*/learn',
     '/api/admin/:path*',
     '/api/category/:path*',
@@ -112,5 +119,9 @@ export const config = {
     '/api/enrollments/:path*',
     '/api/progress/:path*',
     '/api/payments/:path*',
+    '/api/cart/:path*',
+    '/api/wishlist/:path*',
+    '/api/orders/:path*',
+    '/api/coupons/:path*',
   ],
 };
