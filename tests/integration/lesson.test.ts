@@ -4,6 +4,7 @@ import { createConnection } from '@/database/db';
 import Category from '@/database/models/category';
 import Course from '@/database/models/course.schema';
 import { Lesson } from '@/database/models/lesson';
+import { Section } from '@/database/models/section';
 import { mockGetServerSession } from '../setup';
 
 vi.mock('@/lib/cloudinary', () => ({
@@ -14,9 +15,8 @@ vi.mock('@/lib/cloudinary', () => ({
   destroyVideo: vi.fn().mockResolvedValue(undefined),
 }));
 
-const { createLessonForCourse, updateLesson, deleteLesson } = await import(
-  '@/app/api/lessons/lesson.controller'
-);
+const { createLessonForSection, updateLesson, deleteLesson, reorderLessonsInSection } =
+  await import('@/app/api/lessons/lesson.controller');
 
 async function createCourseOwnedBy(instructorId: string) {
   const category = await Category.create({ name: 'Programming' });
@@ -30,18 +30,22 @@ async function createCourseOwnedBy(instructorId: string) {
   });
 }
 
+async function createSectionFor(courseId: string, order = 0) {
+  return Section.create({ course: courseId, title: 'Section 1', order });
+}
+
 function multipartRequest(fields: Record<string, string>) {
   const formData = new FormData();
   for (const [key, value] of Object.entries(fields)) {
     formData.append(key, value);
   }
   formData.append('video', new File([Buffer.from('fake-video')], 'video.mp4', { type: 'video/mp4' }));
-  return new Request('http://localhost/api/courses/x/lessons', { method: 'POST', body: formData });
+  return new Request('http://localhost/api/sections/x/lessons', { method: 'POST', body: formData });
 }
 
-function jsonRequest(body: unknown) {
+function jsonRequest(body: unknown, method = 'PATCH') {
   return new Request('http://localhost/api/lessons/x', {
-    method: 'PATCH',
+    method,
     body: JSON.stringify(body),
     headers: { 'Content-Type': 'application/json' },
   });
@@ -54,33 +58,44 @@ describe('lesson controller — role & ownership matrix', () => {
 
   it('rejects lesson creation for a student (403)', async () => {
     const course = await createCourseOwnedBy(new mongoose.Types.ObjectId().toString());
+    const section = await createSectionFor(course._id.toString());
     mockGetServerSession.mockResolvedValue({ user: { id: 'student-1', role: 'student' } });
 
     await expect(
-      createLessonForCourse(multipartRequest({ title: 'Lesson 1', description: 'desc' }), course._id.toString()),
+      createLessonForSection(
+        multipartRequest({ title: 'Lesson 1', description: 'desc' }),
+        section._id.toString(),
+      ),
     ).rejects.toMatchObject({ statusCode: 403 });
     expect(await Lesson.countDocuments({})).toBe(0);
   });
 
-  it('lets an instructor create a lesson on their own course', async () => {
+  it('lets an instructor create a lesson in a section of their own course', async () => {
     const instructorId = new mongoose.Types.ObjectId().toString();
     const course = await createCourseOwnedBy(instructorId);
+    const section = await createSectionFor(course._id.toString());
     mockGetServerSession.mockResolvedValue({ user: { id: instructorId, role: 'instructor' } });
 
-    const response = await createLessonForCourse(
+    const response = await createLessonForSection(
       multipartRequest({ title: 'Lesson 1', description: 'desc' }),
-      course._id.toString(),
+      section._id.toString(),
     );
     expect(response.status).toBe(201);
-    expect(await Lesson.countDocuments({ course: course._id })).toBe(1);
+
+    const lesson = await Lesson.findOne({ section: section._id });
+    expect(lesson).not.toBeNull();
+    expect(lesson?.course.toString()).toBe(course._id.toString());
+    expect(lesson?.order).toBe(0);
   });
 
-  it('blocks instructor B from creating/updating/deleting lessons on instructor A\'s course', async () => {
+  it("blocks instructor B from creating/updating/deleting lessons in instructor A's course", async () => {
     const instructorA = new mongoose.Types.ObjectId().toString();
     const instructorB = new mongoose.Types.ObjectId().toString();
     const course = await createCourseOwnedBy(instructorA);
+    const section = await createSectionFor(course._id.toString());
     const lesson = await Lesson.create({
       course: course._id,
+      section: section._id,
       title: 'Existing lesson',
       description: 'desc',
       videoUrl: 'https://cdn.example.com/existing.mp4',
@@ -90,24 +105,32 @@ describe('lesson controller — role & ownership matrix', () => {
     mockGetServerSession.mockResolvedValue({ user: { id: instructorB, role: 'instructor' } });
 
     await expect(
-      createLessonForCourse(multipartRequest({ title: 'Sneaky', description: 'desc' }), course._id.toString()),
+      createLessonForSection(
+        multipartRequest({ title: 'Sneaky', description: 'desc' }),
+        section._id.toString(),
+      ),
     ).rejects.toMatchObject({ statusCode: 403 });
     await expect(
       updateLesson(jsonRequest({ title: 'Hijacked' }), lesson._id.toString()),
     ).rejects.toMatchObject({ statusCode: 403 });
     await expect(deleteLesson(lesson._id.toString())).rejects.toMatchObject({ statusCode: 403 });
+    await expect(
+      reorderLessonsInSection(jsonRequest({ orderedIds: [lesson._id.toString()] }), section._id.toString()),
+    ).rejects.toMatchObject({ statusCode: 403 });
 
     const unchanged = await Lesson.findById(lesson._id);
     expect(unchanged?.title).toBe('Existing lesson');
   });
 
   it.each([['super_admin'], ['admin']])(
-    'lets %s manage lessons on a course owned by someone else entirely',
+    'lets %s manage lessons in a section of a course owned by someone else entirely',
     async (role) => {
       const instructorA = new mongoose.Types.ObjectId().toString();
       const course = await createCourseOwnedBy(instructorA);
+      const section = await createSectionFor(course._id.toString());
       const lesson = await Lesson.create({
         course: course._id,
+        section: section._id,
         title: 'Existing lesson',
         description: 'desc',
         videoUrl: 'https://cdn.example.com/existing.mp4',
@@ -125,4 +148,36 @@ describe('lesson controller — role & ownership matrix', () => {
       expect(deleteResponse.status).toBe(200);
     },
   );
+
+  it('reorders lessons within a section', async () => {
+    const instructorId = new mongoose.Types.ObjectId().toString();
+    const course = await createCourseOwnedBy(instructorId);
+    const section = await createSectionFor(course._id.toString());
+    const lessonA = await Lesson.create({
+      course: course._id,
+      section: section._id,
+      title: 'A',
+      description: 'desc',
+      videoUrl: 'https://cdn.example.com/a.mp4',
+      order: 0,
+    });
+    const lessonB = await Lesson.create({
+      course: course._id,
+      section: section._id,
+      title: 'B',
+      description: 'desc',
+      videoUrl: 'https://cdn.example.com/b.mp4',
+      order: 1,
+    });
+
+    mockGetServerSession.mockResolvedValue({ user: { id: instructorId, role: 'instructor' } });
+
+    await reorderLessonsInSection(
+      jsonRequest({ orderedIds: [lessonB._id.toString(), lessonA._id.toString()] }),
+      section._id.toString(),
+    );
+
+    const reordered = await Lesson.find({ section: section._id }).sort('order');
+    expect(reordered.map((lesson) => lesson.title)).toEqual(['B', 'A']);
+  });
 });

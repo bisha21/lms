@@ -87,7 +87,7 @@ function Courses() {
                         className="bg-white transition-all duration-500 hover:bg-gray-50"
                       >
                         <td
-                          onClick={() => router.push(`/admin/courses/${course._id}/lessons`)}
+                          onClick={() => router.push(`/admin/courses/${course._id}/builder`)}
                           className="p-5 whitespace-nowrap text-sm leading-6 font-medium text-gray-900 cursor-pointer hover:underline"
                         >
                           {course?.title}
