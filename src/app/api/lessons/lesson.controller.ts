@@ -144,6 +144,47 @@ export async function updateLesson(req: Request, id: string) {
   return NextResponse.json({ message: 'Lesson updated!!', data: lesson }, { status: 200 });
 }
 
+export async function addLessonAttachment(req: Request, lessonId: string) {
+  await createConnection();
+  const lesson = await Lesson.findById(lessonId);
+  if (!lesson) {
+    throw new AppError('Lesson not found', 404);
+  }
+  await requireCourseOwner('lesson:update', lesson.course.toString());
+
+  const formData = await req.formData();
+  const file = formData.get('file');
+  if (!(file instanceof File)) {
+    throw new AppError('A file is required', 400);
+  }
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const { url, publicId } = await uploadRawBuffer(buffer, file.name);
+
+  lesson.attachments.push({ name: file.name, url, publicId, size: file.size });
+  await lesson.save();
+
+  return NextResponse.json({ data: lesson.attachments }, { status: 201 });
+}
+
+export async function deleteLessonAttachment(lessonId: string, attachmentId: string) {
+  await createConnection();
+  const lesson = await Lesson.findById(lessonId);
+  if (!lesson) {
+    throw new AppError('Lesson not found', 404);
+  }
+  await requireCourseOwner('lesson:update', lesson.course.toString());
+
+  const attachment = lesson.attachments.id(attachmentId);
+  if (!attachment) {
+    throw new AppError('Attachment not found', 404);
+  }
+  await destroyRaw(attachment.publicId);
+  attachment.deleteOne();
+  await lesson.save();
+
+  return NextResponse.json({ data: lesson.attachments }, { status: 200 });
+}
+
 export async function deleteLesson(id: string) {
   await createConnection();
   const lesson = await Lesson.findById(id);

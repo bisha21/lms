@@ -124,6 +124,55 @@ export function useDeleteLesson(courseId: string) {
   });
 }
 
+export function useAddLessonAttachment(courseId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      lessonId,
+      file,
+      onProgress,
+    }: {
+      lessonId: string;
+      file: File;
+      onProgress?: (percent: number) => void;
+    }) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      const response = await API.post(`/lessons/${lessonId}/attachments`, formData, {
+        headers: { 'Content-Type': undefined },
+        onUploadProgress: (event) => {
+          if (onProgress && event.total) onProgress(Math.round((event.loaded / event.total) * 100));
+        },
+      });
+      return response.data.data as ILessonContent['attachments'];
+    },
+    onSuccess: () => {
+      invalidateLessonViews(queryClient, courseId);
+    },
+    onError: () => {
+      toast.error('Failed to attach file');
+    },
+  });
+}
+
+export function useDeleteLessonAttachment(courseId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ lessonId, attachmentId }: { lessonId: string; attachmentId: string }) => {
+      const response = await API.delete(`/lessons/${lessonId}/attachments/${attachmentId}`);
+      return response.data.data as ILessonContent['attachments'];
+    },
+    onSuccess: () => {
+      invalidateLessonViews(queryClient, courseId);
+    },
+    onError: () => {
+      toast.error('Failed to remove attachment');
+    },
+  });
+}
+
 export function useReorderLessons(courseId: string) {
   const queryClient = useQueryClient();
 

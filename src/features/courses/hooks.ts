@@ -113,8 +113,8 @@ export function useTogglePublishCourse() {
 
   return {
     ...rest,
-    mutate: (args: { id: string; status: CourseStatusValue }) =>
-      mutate({ id: args.id, data: { status: args.status } }),
+    mutate: (args: { id: string; status: CourseStatusValue }, options?: Parameters<typeof mutate>[1]) =>
+      mutate({ id: args.id, data: { status: args.status } }, options),
     mutateAsync: (args: { id: string; status: CourseStatusValue }) =>
       mutateAsync({ id: args.id, data: { status: args.status } }),
   };

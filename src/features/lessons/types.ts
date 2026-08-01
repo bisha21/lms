@@ -1,5 +1,12 @@
 export type LessonContentTypeValue = 'video' | 'pdf';
 
+export interface ILessonAttachment {
+  _id: string;
+  name: string;
+  url: string;
+  size: number;
+}
+
 // The trimmed sidebar/navigation projection returned by GET /api/courses/:id/lessons —
 // no videoUrl/pdfUrl/description. See ILessonContent for the full-content shape.
 export interface ILesson {
@@ -17,4 +24,5 @@ export interface ILessonContent extends ILesson {
   description: string;
   videoUrl?: string;
   pdfUrl?: string;
+  attachments: ILessonAttachment[];
 }

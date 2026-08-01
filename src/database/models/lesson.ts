@@ -5,6 +5,14 @@ export enum LessonContentType {
   PDF = 'pdf',
 }
 
+export interface ILessonAttachment {
+  _id: mongoose.Types.ObjectId;
+  name: string;
+  url: string;
+  publicId: string;
+  size: number;
+}
+
 export interface ILesson extends Document {
   course: mongoose.Types.ObjectId;
   section?: mongoose.Types.ObjectId;
@@ -15,6 +23,7 @@ export interface ILesson extends Document {
   videoPublicId?: string;
   pdfUrl?: string;
   pdfPublicId?: string;
+  attachments: ILessonAttachment[];
   order: number;
   durationSeconds?: number;
   createdAt: Date;
@@ -58,6 +67,17 @@ const lessonSchema = new Schema<ILesson>({
   },
   pdfPublicId: {
     type: String,
+  },
+  attachments: {
+    type: [
+      {
+        name: { type: String, required: true },
+        url: { type: String, required: true },
+        publicId: { type: String, required: true },
+        size: { type: Number, required: true },
+      },
+    ],
+    default: [],
   },
   order: {
     type: Number,
