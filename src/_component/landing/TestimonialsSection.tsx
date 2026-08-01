@@ -1,5 +1,6 @@
 import SectionHeading from '@/_component/SectionHeading';
 import RatingStars from '@/_component/RatingStars';
+import { Stagger, StaggerItem } from '@/_component/motion/Stagger';
 
 const TESTIMONIALS = [
   {
@@ -32,25 +33,27 @@ export default function TestimonialsSection() {
   return (
     <section className="mx-auto max-w-6xl px-6 py-10">
       <SectionHeading title="Loved by learners worldwide" subtitle="Real feedback from our student community" />
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <Stagger className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {TESTIMONIALS.map((t) => (
-          <div key={t.name} className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5">
-            <RatingStars rating={5} />
-            <p className="text-sm text-muted-foreground">&ldquo;{t.quote}&rdquo;</p>
-            <div className="mt-auto flex items-center gap-3">
-              <div
-                className={`flex h-9 w-9 items-center justify-center rounded-full text-xs font-semibold ${t.color}`}
-              >
-                {t.initials}
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground">{t.name}</p>
-                <p className="text-xs text-muted-foreground">{t.role}</p>
+          <StaggerItem key={t.name}>
+            <div className="flex h-full flex-col gap-4 rounded-xl border border-border bg-card p-5 transition-shadow hover:shadow-md">
+              <RatingStars rating={5} />
+              <p className="text-sm text-muted-foreground">&ldquo;{t.quote}&rdquo;</p>
+              <div className="mt-auto flex items-center gap-3">
+                <div
+                  className={`flex h-9 w-9 items-center justify-center rounded-full text-xs font-semibold ${t.color}`}
+                >
+                  {t.initials}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">{t.name}</p>
+                  <p className="text-xs text-muted-foreground">{t.role}</p>
+                </div>
               </div>
             </div>
-          </div>
+          </StaggerItem>
         ))}
-      </div>
+      </Stagger>
     </section>
   );
 }

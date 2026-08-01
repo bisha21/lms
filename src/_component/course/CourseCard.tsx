@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 import { useSession } from 'next-auth/react';
 import { Clock, Heart } from 'lucide-react';
 
@@ -63,82 +64,84 @@ export default function CourseCard({
   };
 
   return (
-    <Link
-      href={href ?? `/courses/${course.slug}`}
-      className={cn(
-        'group flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-shadow hover:shadow-md',
-        className
-      )}
-    >
-      <div className="relative aspect-video w-full overflow-hidden bg-muted">
-        {course.thumbnail ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={course.thumbnail}
-            alt={course.title}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
-            No preview
-          </div>
+    <motion.div whileHover={{ y: -4 }} transition={{ type: 'spring', stiffness: 300, damping: 22 }} className="h-full">
+      <Link
+        href={href ?? `/courses/${course.slug}`}
+        className={cn(
+          'group flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card transition-shadow hover:shadow-lg',
+          className
         )}
-        {course.level && (
-          <Badge variant="secondary" className="absolute left-2 top-2 capitalize">
-            {course.level}
-          </Badge>
-        )}
-        {authed && showActions && (
-          <button
-            type="button"
-            onClick={toggleWishlist}
-            aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
-            aria-pressed={isWishlisted}
-            className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-background/80 backdrop-blur transition-colors hover:bg-background"
-          >
-            <Heart className={cn('h-4 w-4', isWishlisted ? 'fill-wishlist text-wishlist' : 'text-foreground')} />
-          </button>
-        )}
-      </div>
-
-      <div className="flex flex-1 flex-col gap-2 p-4">
-        {instructorName && <p className="text-xs text-muted-foreground">{instructorName}</p>}
-        <h3 className="line-clamp-2 font-semibold leading-snug text-foreground">{course.title}</h3>
-
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-          {typeof course.averageRating === 'number' && (
-            <RatingStars rating={course.averageRating} reviewCount={course.reviewCount} />
+      >
+        <div className="relative aspect-video w-full overflow-hidden bg-muted">
+          {course.thumbnail ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={course.thumbnail}
+              alt={course.title}
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+              No preview
+            </div>
           )}
-          {course.duration && (
-            <span className="flex items-center gap-1">
-              <Clock className="h-3.5 w-3.5" />
-              {course.duration}
-            </span>
+          {course.level && (
+            <Badge variant="secondary" className="absolute left-2 top-2 capitalize">
+              {course.level}
+            </Badge>
           )}
-        </div>
-
-        <div className="mt-auto flex items-center justify-between pt-2">
-          <span className="text-lg font-bold text-foreground">
-            {course.coursePrice > 0 ? `$${course.coursePrice}` : 'Free'}
-          </span>
-          {authed && showActions && course.coursePrice > 0 && (
+          {authed && showActions && (
             <button
               type="button"
-              onClick={handleAddToCart}
-              disabled={addToCart.isPending}
-              className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+              onClick={toggleWishlist}
+              aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+              aria-pressed={isWishlisted}
+              className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-background/80 backdrop-blur transition-colors hover:bg-background"
             >
-              Add to cart
+              <Heart className={cn('h-4 w-4', isWishlisted ? 'fill-wishlist text-wishlist' : 'text-foreground')} />
             </button>
           )}
         </div>
-        {typeof progress === 'number' && (
-          <div className="pt-1">
-            <Progress value={progress} className="h-1.5" />
-            <p className="mt-1 text-xs text-muted-foreground">{progress}% complete</p>
+
+        <div className="flex flex-1 flex-col gap-2 p-4">
+          {instructorName && <p className="text-xs text-muted-foreground">{instructorName}</p>}
+          <h3 className="line-clamp-2 font-semibold leading-snug text-foreground">{course.title}</h3>
+
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            {typeof course.averageRating === 'number' && (
+              <RatingStars rating={course.averageRating} reviewCount={course.reviewCount} />
+            )}
+            {course.duration && (
+              <span className="flex items-center gap-1">
+                <Clock className="h-3.5 w-3.5" />
+                {course.duration}
+              </span>
+            )}
           </div>
-        )}
-      </div>
-    </Link>
+
+          <div className="mt-auto flex items-center justify-between pt-2">
+            <span className="text-lg font-bold text-foreground">
+              {course.coursePrice > 0 ? `$${course.coursePrice}` : 'Free'}
+            </span>
+            {authed && showActions && course.coursePrice > 0 && (
+              <button
+                type="button"
+                onClick={handleAddToCart}
+                disabled={addToCart.isPending}
+                className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+              >
+                Add to cart
+              </button>
+            )}
+          </div>
+          {typeof progress === 'number' && (
+            <div className="pt-1">
+              <Progress value={progress} className="h-1.5" />
+              <p className="mt-1 text-xs text-muted-foreground">{progress}% complete</p>
+            </div>
+          )}
+        </div>
+      </Link>
+    </motion.div>
   );
 }

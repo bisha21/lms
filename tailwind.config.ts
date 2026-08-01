@@ -79,6 +79,25 @@ export default {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
+  		},
+  		keyframes: {
+  			float: {
+  				'0%, 100%': { transform: 'translateY(0) translateX(0)' },
+  				'50%': { transform: 'translateY(-16px) translateX(8px)' }
+  			},
+  			'float-slow': {
+  				'0%, 100%': { transform: 'translateY(0) translateX(0)' },
+  				'50%': { transform: 'translateY(14px) translateX(-10px)' }
+  			},
+  			shine: {
+  				'0%': { backgroundPosition: '200% center' },
+  				'100%': { backgroundPosition: '-200% center' }
+  			}
+  		},
+  		animation: {
+  			float: 'float 8s ease-in-out infinite',
+  			'float-slow': 'float-slow 11s ease-in-out infinite',
+  			shine: 'shine 3s linear infinite'
   		}
   	}
   },

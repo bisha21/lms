@@ -1,11 +1,13 @@
 'use client';
 
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 
 import { useCategories } from '@/features/categories/hooks';
 import CategoryIcon from '@/_component/CategoryIcon';
 import SectionHeading from '@/_component/SectionHeading';
+import { Stagger, StaggerItem } from '@/_component/motion/Stagger';
 
 export default function CategoriesSection() {
   const { data: categories = [], isLoading } = useCategories();
@@ -26,18 +28,21 @@ export default function CategoriesSection() {
           </Link>
         }
       />
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+      <Stagger className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         {categories.map((category) => (
-          <Link
-            key={category._id}
-            href={`/courses?category=${category._id}`}
-            className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 transition-shadow hover:shadow-md"
-          >
-            <CategoryIcon name={category.name} />
-            <span className="font-medium text-foreground">{category.name}</span>
-          </Link>
+          <StaggerItem key={category._id}>
+            <motion.div whileHover={{ y: -4 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
+              <Link
+                href={`/courses?category=${category._id}`}
+                className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 transition-shadow hover:shadow-md"
+              >
+                <CategoryIcon name={category.name} />
+                <span className="font-medium text-foreground">{category.name}</span>
+              </Link>
+            </motion.div>
+          </StaggerItem>
         ))}
-      </div>
+      </Stagger>
     </section>
   );
 }
