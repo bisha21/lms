@@ -14,6 +14,8 @@ import SectionHeading from '@/_component/SectionHeading';
 import CourseCard from '@/_component/course/CourseCard';
 import ContinueLearningCard from '@/_component/dashboard/ContinueLearningCard';
 import CourseTabs from '@/_component/dashboard/CourseTabs';
+import Reveal from '@/_component/motion/Reveal';
+import { Stagger, StaggerItem } from '@/_component/motion/Stagger';
 
 type TabValue = 'all' | 'in-progress' | 'wishlist';
 
@@ -47,40 +49,52 @@ export default function StudentDashboardPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-10">
-      <h1 className="text-2xl font-bold text-foreground">
-        Welcome back{session?.user?.name ? `, ${session.user.name.split(' ')[0]}` : ''}
-      </h1>
-      <p className="mt-1 text-sm text-muted-foreground">Here&apos;s what&apos;s happening with your learning.</p>
+      <Reveal>
+        <h1 className="text-2xl font-bold text-foreground">
+          Welcome back{session?.user?.name ? `, ${session.user.name.split(' ')[0]}` : ''}
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">Here&apos;s what&apos;s happening with your learning.</p>
+      </Reveal>
 
-      <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatTile
-          icon={BookOpen}
-          value={enrollments.length}
-          label="Enrolled courses"
-          colorClassName="bg-palette-1-soft text-palette-1"
-        />
-        <StatTile
-          icon={Flame}
-          value={continueLearning.length}
-          label="In progress"
-          colorClassName="bg-palette-4-soft text-palette-4"
-        />
-        <StatTile
-          icon={Heart}
-          value={wishlistItems.length}
-          label="Wishlist saved"
-          colorClassName="bg-palette-5-soft text-palette-5"
-        />
-        <StatTile
-          icon={Receipt}
-          value={payments.length}
-          label="Payments"
-          colorClassName="bg-palette-2-soft text-palette-2"
-        />
-      </div>
+      <Stagger className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StaggerItem>
+          <StatTile
+            icon={BookOpen}
+            value={enrollments.length}
+            label="Enrolled courses"
+            colorClassName="bg-palette-1-soft text-palette-1"
+          />
+        </StaggerItem>
+        <StaggerItem>
+          <StatTile
+            icon={Flame}
+            value={continueLearning.length}
+            label="In progress"
+            colorClassName="bg-palette-4-soft text-palette-4"
+          />
+        </StaggerItem>
+        <StaggerItem>
+          <StatTile
+            icon={Heart}
+            value={wishlistItems.length}
+            label="Wishlist saved"
+            colorClassName="bg-palette-5-soft text-palette-5"
+          />
+        </StaggerItem>
+        <StaggerItem>
+          <StatTile
+            icon={Receipt}
+            value={payments.length}
+            label="Payments"
+            colorClassName="bg-palette-2-soft text-palette-2"
+          />
+        </StaggerItem>
+      </Stagger>
 
       <section className="mt-10">
-        <SectionHeading title="Continue learning" subtitle="Pick up right where you left off" />
+        <Reveal>
+          <SectionHeading title="Continue learning" subtitle="Pick up right where you left off" />
+        </Reveal>
         {loadingContinue ? (
           <p className="text-sm text-muted-foreground">Loading...</p>
         ) : continueLearning.length === 0 ? (
@@ -92,23 +106,27 @@ export default function StudentDashboardPage() {
             .
           </p>
         ) : (
-          <div className="flex gap-4 overflow-x-auto pb-2">
+          <Stagger className="flex gap-4 overflow-x-auto pb-2">
             {continueLearning.map((item) => (
-              <ContinueLearningCard key={item.course._id} item={item} />
+              <StaggerItem key={item.course._id}>
+                <ContinueLearningCard item={item} />
+              </StaggerItem>
             ))}
-          </div>
+          </Stagger>
         )}
       </section>
 
       <section className="mt-10">
-        <SectionHeading
-          title="My courses"
-          action={
-            <Link href="/wishlist" className="text-sm font-medium text-brand hover:underline">
-              View wishlist
-            </Link>
-          }
-        />
+        <Reveal>
+          <SectionHeading
+            title="My courses"
+            action={
+              <Link href="/wishlist" className="text-sm font-medium text-brand hover:underline">
+                View wishlist
+              </Link>
+            }
+          />
+        </Reveal>
         <div className="mb-5">
           <CourseTabs
             value={tab}
@@ -126,11 +144,13 @@ export default function StudentDashboardPage() {
           wishlistItems.length === 0 ? (
             <p className="text-sm text-muted-foreground">Your wishlist is empty.</p>
           ) : (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <Stagger className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {wishlistItems.map((course) => (
-                <CourseCard key={course._id} course={course} />
+                <StaggerItem key={course._id}>
+                  <CourseCard course={course} />
+                </StaggerItem>
               ))}
-            </div>
+            </Stagger>
           )
         ) : visibleEnrollments.length === 0 ? (
           <p className="text-sm text-muted-foreground">
@@ -143,17 +163,18 @@ export default function StudentDashboardPage() {
             .
           </p>
         ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <Stagger className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {visibleEnrollments.map((enrollment) => (
-              <CourseCard
-                key={enrollment._id}
-                course={enrollment.course}
-                href={`/courses/${enrollment.course.slug}/learn`}
-                showActions={false}
-                progress={progressByCourseId.get(enrollment.course._id as string)}
-              />
+              <StaggerItem key={enrollment._id}>
+                <CourseCard
+                  course={enrollment.course}
+                  href={`/courses/${enrollment.course.slug}/learn`}
+                  showActions={false}
+                  progress={progressByCourseId.get(enrollment.course._id as string)}
+                />
+              </StaggerItem>
             ))}
-          </div>
+          </Stagger>
         )}
       </section>
     </div>

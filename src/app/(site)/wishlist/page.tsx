@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { useWishlist } from '@/features/wishlist/hooks';
 import CourseCard from '@/_component/course/CourseCard';
+import Reveal from '@/_component/motion/Reveal';
+import { Stagger, StaggerItem } from '@/_component/motion/Stagger';
 
 export default function WishlistPage() {
   const { status } = useRequireAuth();
@@ -17,22 +19,28 @@ export default function WishlistPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-10">
-      <h1 className="mb-6 text-2xl font-bold text-foreground">Your Wishlist</h1>
+      <Reveal>
+        <h1 className="mb-6 text-2xl font-bold text-foreground">Your Wishlist</h1>
+      </Reveal>
 
       {items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          Your wishlist is empty.{' '}
-          <Link href="/courses" className="font-medium text-brand hover:underline">
-            Browse the catalog
-          </Link>
-          .
-        </p>
+        <Reveal>
+          <p className="text-sm text-muted-foreground">
+            Your wishlist is empty.{' '}
+            <Link href="/courses" className="font-medium text-brand hover:underline">
+              Browse the catalog
+            </Link>
+            .
+          </p>
+        </Reveal>
       ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <Stagger className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((item) => (
-            <CourseCard key={item._id} course={item} />
+            <StaggerItem key={item._id}>
+              <CourseCard course={item} />
+            </StaggerItem>
           ))}
-        </div>
+        </Stagger>
       )}
     </div>
   );
