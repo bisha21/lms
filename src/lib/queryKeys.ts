@@ -58,5 +58,8 @@ export const queryKeys = {
   },
   instructor: {
     dashboard: ['instructor', 'dashboard'] as const,
+    students: ['instructor', 'students'] as const,
+    revenue: (params?: { range?: string; page?: number; status?: string }) =>
+      ['instructor', 'revenue', params ?? {}] as const,
   },
 };

@@ -15,6 +15,7 @@ export enum CourseLevel {
 interface Course extends Document {
   title: string;
   slug: string;
+  subtitle?: string;
   courseDescription: string;
   coursePrice: number;
   thumbnail?: string;
@@ -37,6 +38,9 @@ const courseSchema = new Schema({
   slug: {
     type: String,
     unique: true,
+  },
+  subtitle: {
+    type: String,
   },
   courseDescription: {
     type: String,

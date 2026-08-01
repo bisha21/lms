@@ -1,70 +1,137 @@
 'use client';
 
-import { useInstructorDashboard } from '@/features/instructor/hooks';
+import Link from 'next/link';
+import { useSession } from 'next-auth/react';
+import { Award, CheckCircle2, DollarSign, Download, Megaphone, Users } from 'lucide-react';
 
-export default function InstructorPage() {
+import { useInstructorDashboard } from '@/features/instructor/hooks';
+import { Button } from '@/components/ui/button';
+import StatTile from '@/_component/StatTile';
+import SectionHeading from '@/_component/SectionHeading';
+import BarChart from '@/_component/charts/BarChart';
+import RecentActivityFeed from '@/_component/instructor/RecentActivityFeed';
+import TopCoursesTable from '@/_component/instructor/TopCoursesTable';
+import { downloadCsv } from '@/lib/exportCsv';
+
+function formatShortDate(dateStr: string) {
+  const d = new Date(`${dateStr}T00:00:00Z`);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+}
+
+export default function InstructorDashboardPage() {
+  const { data: session } = useSession();
   const { data, isLoading } = useInstructorDashboard();
 
+  const handleExport = () => {
+    if (!data) return;
+    downloadCsv(
+      'course-performance.csv',
+      data.coursePerformance.map((c) => ({
+        Course: c.title,
+        Status: c.status,
+        Enrollments: c.enrollmentCount,
+        Revenue: c.revenue,
+        Rating: c.averageRating ?? '',
+        'Completion Rate': c.completionRate ?? '',
+      }))
+    );
+  };
+
   if (isLoading || !data) {
-    return <p className="max-w-6xl mx-auto px-6 py-10">Loading...</p>;
+    return <p className="p-10 text-muted-foreground">Loading...</p>;
   }
 
-  return (
-    <div className="max-w-6xl mx-auto px-6 py-10 flex flex-col gap-6">
-      <h1 className="text-xl font-semibold text-gray-900">Instructor Dashboard</h1>
+  const firstName = session?.user?.name?.split(' ')[0];
+  const topCourses = [...data.coursePerformance].sort((a, b) => b.revenue - a.revenue).slice(0, 5);
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl p-4 border border-gray-200">
-          <p className="text-sm text-gray-500">Total revenue</p>
-          <p className="text-2xl font-bold text-gray-900">${data.totalRevenue.toFixed(2)}</p>
+  return (
+    <div className="mx-auto max-w-7xl px-6 py-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Welcome back{firstName ? `, ${firstName}` : ''}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Track revenue, monitor enrollments, and keep your courses performing at their best.
+          </p>
         </div>
-        <div className="bg-white rounded-xl p-4 border border-gray-200">
-          <p className="text-sm text-gray-500">Enrolled students</p>
-          <p className="text-2xl font-bold text-gray-900">{data.enrolledStudentsCount}</p>
-        </div>
-        <div className="bg-white rounded-xl p-4 border border-gray-200">
-          <p className="text-sm text-gray-500">Published courses</p>
-          <p className="text-2xl font-bold text-gray-900">{data.publishedCount}</p>
-        </div>
-        <div className="bg-white rounded-xl p-4 border border-gray-200">
-          <p className="text-sm text-gray-500">Drafts</p>
-          <p className="text-2xl font-bold text-gray-900">{data.draftCount}</p>
+        <div className="flex shrink-0 gap-2">
+          <Button variant="outline" onClick={handleExport}>
+            <Download className="h-4 w-4" />
+            Export Report
+          </Button>
+          <Link href="/instructor/announcements">
+            <Button>
+              <Megaphone className="h-4 w-4" />
+              Create Announcement
+            </Button>
+          </Link>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <h2 className="font-semibold text-gray-900 p-4 pb-0">Course performance</h2>
-        <table className="min-w-full mt-2">
-          <thead>
-            <tr className="bg-gray-50 text-left text-sm text-gray-900">
-              <th className="p-4">Course</th>
-              <th className="p-4">Status</th>
-              <th className="p-4">Enrollments</th>
-              <th className="p-4">Revenue</th>
-              <th className="p-4">Rating</th>
-              <th className="p-4">Completion</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {data.coursePerformance.map((course) => (
-              <tr key={course._id} className="text-sm text-gray-900">
-                <td className="p-4">{course.title}</td>
-                <td className="p-4 capitalize">{course.status}</td>
-                <td className="p-4">{course.enrollmentCount}</td>
-                <td className="p-4">${course.revenue.toFixed(2)}</td>
-                <td className="p-4">{course.averageRating ?? '—'}</td>
-                <td className="p-4">{course.completionRate === null ? '—' : `${course.completionRate}%`}</td>
-              </tr>
-            ))}
-            {data.coursePerformance.length === 0 && (
-              <tr>
-                <td colSpan={6} className="p-4 text-center text-gray-500">
-                  No courses yet
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+      <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatTile
+          icon={DollarSign}
+          value={`$${data.totalRevenue.toFixed(2)}`}
+          label="Total revenue"
+          colorClassName="bg-palette-2-soft text-palette-2"
+        />
+        <StatTile
+          icon={Users}
+          value={data.enrolledStudentsCount}
+          label="Total students"
+          colorClassName="bg-palette-1-soft text-palette-1"
+        />
+        <StatTile
+          icon={Award}
+          value={data.averageRating !== null ? `${data.averageRating}/5` : '—'}
+          label="Course rating"
+          colorClassName="bg-palette-3-soft text-palette-3"
+        />
+        <StatTile
+          icon={CheckCircle2}
+          value={data.averageCompletionRate !== null ? `${data.averageCompletionRate}%` : '—'}
+          label="Completion rate"
+          colorClassName="bg-palette-6-soft text-palette-6"
+        />
+      </div>
+
+      <div className="mt-8 grid gap-6 lg:grid-cols-2">
+        <div className="rounded-xl border border-border bg-card p-5">
+          <SectionHeading
+            className="mb-4"
+            title="Revenue Analytics"
+            subtitle="Revenue trend across your active catalog"
+          />
+          <BarChart
+            data={data.revenueTrend.map((d) => ({ label: d.date, value: d.amount ?? 0 }))}
+            colorClassName="bg-palette-2"
+            formatLabel={formatShortDate}
+            formatValue={(v) => `$${v.toFixed(2)}`}
+          />
+        </div>
+        <div className="rounded-xl border border-border bg-card p-5">
+          <SectionHeading
+            className="mb-4"
+            title="Enrollment Analytics"
+            subtitle="New enrollments across your courses"
+          />
+          <BarChart
+            data={data.enrollmentTrend.map((d) => ({ label: d.date, value: d.count ?? 0 }))}
+            colorClassName="bg-palette-1"
+            formatLabel={formatShortDate}
+            formatValue={(v) => `${v} enrollment${v === 1 ? '' : 's'}`}
+          />
+        </div>
+      </div>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <div className="rounded-xl border border-border bg-card p-5">
+          <SectionHeading className="mb-4" title="Recent Activity" subtitle="Latest enrollments and reviews" />
+          <RecentActivityFeed items={data.recentActivity} />
+        </div>
+        <div className="rounded-xl border border-border bg-card p-5">
+          <SectionHeading className="mb-4" title="Top Performing Courses" subtitle="Sorted by revenue" />
+          <TopCoursesTable courses={topCourses} />
+        </div>
       </div>
     </div>
   );

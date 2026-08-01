@@ -11,6 +11,7 @@ export interface IInstructorSummary {
 
 export interface ICourseForData {
   title: string;
+  subtitle?: string;
   coursePrice: number;
   courseDescription: string;
   category: ICategory | string;
