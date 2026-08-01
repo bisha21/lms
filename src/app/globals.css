@@ -33,6 +33,31 @@ body {
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
+
+    /* Semantic status colors */
+    --success: 152 69% 31%;
+    --success-soft: 152 69% 95%;
+    --warning: 32 95% 44%;
+    --warning-soft: 38 92% 95%;
+    --destructive-soft: 0 86% 97%;
+
+    /* Single-purpose accent colors */
+    --rating: 45 93% 47%;
+    --wishlist: 346 77% 55%;
+
+    /* Rotating accent palette for category/stat icons (bg + soft-bg pairs) */
+    --palette-1: 217 91% 60%;
+    --palette-1-soft: 217 91% 95%;
+    --palette-2: 158 64% 34%;
+    --palette-2-soft: 158 64% 95%;
+    --palette-3: 271 68% 58%;
+    --palette-3-soft: 271 68% 96%;
+    --palette-4: 32 95% 44%;
+    --palette-4-soft: 38 92% 95%;
+    --palette-5: 346 77% 55%;
+    --palette-5-soft: 346 77% 96%;
+    --palette-6: 199 89% 48%;
+    --palette-6-soft: 199 89% 95%;
   }
   .dark {
     --background: 222.2 84% 4.9%;
@@ -59,6 +84,31 @@ body {
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+
+    /* Semantic status colors */
+    --success: 152 60% 45%;
+    --success-soft: 152 40% 18%;
+    --warning: 38 92% 55%;
+    --warning-soft: 38 60% 18%;
+    --destructive-soft: 0 40% 20%;
+
+    /* Single-purpose accent colors */
+    --rating: 45 93% 58%;
+    --wishlist: 346 77% 60%;
+
+    /* Rotating accent palette for category/stat icons (bg + soft-bg pairs) */
+    --palette-1: 217 91% 65%;
+    --palette-1-soft: 217 50% 20%;
+    --palette-2: 158 64% 45%;
+    --palette-2-soft: 158 40% 18%;
+    --palette-3: 271 68% 65%;
+    --palette-3-soft: 271 40% 20%;
+    --palette-4: 38 92% 55%;
+    --palette-4-soft: 38 50% 18%;
+    --palette-5: 346 77% 62%;
+    --palette-5-soft: 346 40% 20%;
+    --palette-6: 199 89% 55%;
+    --palette-6-soft: 199 45% 18%;
   }
 }
 
