@@ -1,20 +1,27 @@
 'use client';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+
+import { Suspense, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Pencil, Plus, Search, Trash } from 'lucide-react';
+
 import { useAppDispatch, useAppSelector } from '@/redux/hooks';
 import { useCourses, useDeleteCourse, useTogglePublishCourse } from '@/features/courses/hooks';
+import { closeModal, openModal } from '@/redux/modal/modalSlice';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Modal from '@/_component/Modal';
 import CourseForm from '@/_component/CourseForm';
-import { Pencil, Trash } from 'lucide-react';
-import { closeModal, openModal } from '@/redux/modal/modalSlice';
+import SectionHeading from '@/_component/SectionHeading';
+import Reveal from '@/_component/motion/Reveal';
 
 function Courses() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const { data } = useCourses();
   const courses = data?.courses ?? [];
-  const [search, setSearch] = useState<string>('');
+  const [search, setSearch] = useState(searchParams.get('search') ?? '');
   const { isOpen, type, data: modalData } = useAppSelector((store) => store.modal);
-  const router = useRouter();
 
   const dispatch = useAppDispatch();
   const deleteCourse = useDeleteCourse();
@@ -30,132 +37,104 @@ function Courses() {
   };
 
   return (
-    <div className="flex flex-col">
-      <div className="overflow-x-auto">
-        <div className="min-w-full inline-block align-middle">
-          <div className="relative text-gray-500 focus-within:text-gray-900 mb-4">
-            <div className="flex justify-between items-center border">
-              <div className="flex flex-row">
-                <input
-                  type="text"
-                  id="default-search"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="block w-80 h-11 pr-5 pl-12 py-2.5 text-base font-normal shadow-xs text-gray-900 bg-transparent border border-gray-300 rounded-full placeholder-gray-400 focus:outline-none"
-                  placeholder="Search for course"
-                />
-              </div>
-              <div>
-                <Button onClick={() => dispatch(openModal({ type: 'add' }))}>
-                  + Add Courses
-                </Button>
-              </div>
-            </div>
-          </div>
-          <div className="overflow-hidden">
-            <table className="min-w-full rounded-xl">
-              <thead>
-                <tr className="bg-gray-50">
-                  <th className="p-5 text-left text-sm leading-6 font-semibold text-gray-900 capitalize rounded-t-xl">
-                    Title
-                  </th>
-                  <th className="p-5 text-left text-sm leading-6 font-semibold text-gray-900 capitalize">
-                    Price
-                  </th>
-                  <th className="p-5 text-left text-sm leading-6 font-semibold text-gray-900 capitalize">
-                    Duration
-                  </th>
-                  <th className="p-5 text-left text-sm leading-6 font-semibold text-gray-900 capitalize">
-                    Category
-                  </th>
-                  <th className="p-5 text-left text-sm leading-6 font-semibold text-gray-900 capitalize">
-                    Status
-                  </th>
-                  <th className="p-5 text-left text-sm leading-6 font-semibold text-gray-900 capitalize rounded-t-xl">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-300 ">
-                {filteredCourses.length > 0 ? (
-                  filteredCourses.map((course) => {
-                    const categoryName =
-                      typeof course.category === 'string' ? course.category : course.category?.name;
-                    return (
-                      <tr
-                        key={course._id}
-                        className="bg-white transition-all duration-500 hover:bg-gray-50"
-                      >
-                        <td
-                          onClick={() => router.push(`/admin/courses/${course._id}/builder`)}
-                          className="p-5 whitespace-nowrap text-sm leading-6 font-medium text-gray-900 cursor-pointer hover:underline"
-                        >
-                          {course?.title}
-                        </td>
-                        <td className="p-5 whitespace-nowrap text-sm leading-6 font-medium text-gray-900">
-                          {course?.coursePrice}
-                        </td>
-                        <td className="p-5 whitespace-nowrap text-sm leading-6 font-medium text-gray-900">
-                          {course?.duration}
-                        </td>
-                        <td className="p-5 whitespace-nowrap text-sm leading-6 font-medium text-gray-900">
-                          {categoryName}
-                        </td>
-                        <td className="p-5 whitespace-nowrap text-sm leading-6 font-medium">
-                          <button
-                            onClick={() =>
-                              togglePublishCourse.mutate({
-                                id: course._id as string,
-                                status: course.status === 'published' ? 'draft' : 'published',
-                              })
-                            }
-                            className={`px-2 py-1 rounded-full text-xs ${
-                              course.status === 'published'
-                                ? 'bg-green-100 text-green-700'
-                                : 'bg-gray-100 text-gray-700'
-                            }`}
-                          >
-                            {course.status === 'published' ? 'Published' : 'Draft'}
-                          </button>
-                        </td>
-                        <td className="p-5">
-                          <div className="flex items-center gap-1">
-                            <Button
-                              variant="outline"
-                              onClick={() =>
-                                dispatch(openModal({ type: 'edit', data: course }))
-                              }
-                            >
-                              <Pencil color="blue" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              onClick={() =>
-                                dispatch(openModal({ type: 'delete', data: course }))
-                              }
-                            >
-                              <Trash color="red" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                ) : (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="p-5 text-center text-sm leading-6 font-medium text-gray-900"
-                    >
-                      No courses available
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+    <div className="mx-auto max-w-7xl">
+      <SectionHeading
+        title="Courses"
+        subtitle="Manage every course on the platform."
+        action={
+          <Button onClick={() => dispatch(openModal({ type: 'add' }))}>
+            <Plus className="h-4 w-4" />
+            Add Course
+          </Button>
+        }
+      />
+
+      <div className="relative mb-6 max-w-sm">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full rounded-md border border-input bg-background py-2 pl-9 pr-3 text-sm"
+          placeholder="Search for course"
+        />
       </div>
+
+      <Reveal className="rounded-xl border border-border bg-card">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Title</TableHead>
+              <TableHead>Price</TableHead>
+              <TableHead>Duration</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredCourses.length > 0 ? (
+              filteredCourses.map((course) => {
+                const categoryName =
+                  typeof course.category === 'string' ? course.category : course.category?.name;
+                return (
+                  <TableRow key={course._id}>
+                    <TableCell
+                      onClick={() => router.push(`/admin/courses/${course._id}/builder`)}
+                      className="cursor-pointer font-medium text-foreground hover:underline"
+                    >
+                      {course?.title}
+                    </TableCell>
+                    <TableCell className="text-foreground">
+                      {course.coursePrice > 0 ? `$${course.coursePrice}` : 'Free'}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">{course?.duration}</TableCell>
+                    <TableCell className="text-muted-foreground">{categoryName}</TableCell>
+                    <TableCell>
+                      <button
+                        onClick={() =>
+                          togglePublishCourse.mutate({
+                            id: course._id as string,
+                            status: course.status === 'published' ? 'draft' : 'published',
+                          })
+                        }
+                      >
+                        <Badge variant={course.status === 'published' ? 'success' : 'secondary'}>
+                          {course.status === 'published' ? 'Published' : 'Draft'}
+                        </Badge>
+                      </button>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => dispatch(openModal({ type: 'edit', data: course }))}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => dispatch(openModal({ type: 'delete', data: course }))}
+                        >
+                          <Trash className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            ) : (
+              <TableRow>
+                <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
+                  No courses available
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </Reveal>
 
       <Modal
         open={isOpen && (type === 'add' || type === 'edit')}
@@ -191,4 +170,10 @@ function Courses() {
   );
 }
 
-export default Courses;
+export default function CoursesPage() {
+  return (
+    <Suspense fallback={<p className="text-muted-foreground">Loading...</p>}>
+      <Courses />
+    </Suspense>
+  );
+}

@@ -27,18 +27,18 @@ export function SortableLesson({ lesson, index, onEdit, onDelete }: SortableLess
     <li
       ref={setNodeRef}
       style={style}
-      className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-md px-3 py-2"
+      className="flex items-center justify-between bg-muted/40 border border-border rounded-md px-3 py-2"
     >
       <div className="flex items-center gap-2 min-w-0">
         <button
           {...attributes}
           {...listeners}
-          className="cursor-grab text-gray-400 hover:text-gray-600 shrink-0"
+          className="cursor-grab text-muted-foreground hover:text-foreground shrink-0"
           aria-label="Drag to reorder lesson"
         >
           <GripVertical className="h-4 w-4" />
         </button>
-        <span className="text-sm text-gray-800 truncate">
+        <span className="text-sm text-foreground truncate">
           {index + 1}. {lesson.title}
         </span>
       </div>

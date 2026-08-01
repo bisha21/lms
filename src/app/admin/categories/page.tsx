@@ -1,8 +1,13 @@
 'use client';
+import { useState } from 'react';
+import { Pencil, Plus, Search, Trash } from 'lucide-react';
+
 import Form from '@/_component/Form';
 import Modal from '@/_component/Modal';
+import SectionHeading from '@/_component/SectionHeading';
+import Reveal from '@/_component/motion/Reveal';
 import { Button } from '@/components/ui/button';
-import { Pencil, Trash } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAppDispatch, useAppSelector } from '@/redux/hooks';
 import { openModal, closeModal } from '@/redux/modal/modalSlice';
 import { useCategories, useDeleteCategory } from '@/features/categories/hooks';
@@ -12,6 +17,9 @@ const Categories = () => {
   const { data: categories = [] } = useCategories();
   const deleteCategory = useDeleteCategory();
   const { isOpen, type, data } = useAppSelector((store) => store.modal);
+  const [search, setSearch] = useState('');
+
+  const filtered = categories.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()));
 
   const handleDelete = () => {
     if (data?._id) {
@@ -20,83 +28,76 @@ const Categories = () => {
   };
 
   return (
-    <div className="flex flex-col">
-      <div className="overflow-x-auto">
-        <div className="min-w-full inline-block align-middle">
-          <div className="relative text-gray-500 focus-within:text-gray-900 mb-4">
-            <div className="flex items-center justify-between">
-              <input
-                type="text"
-                id="default-search"
-                className="block w-80 h-11 pr-5 pl-12 py-2.5 text-base font-normal shadow-xs text-gray-900 bg-transparent border border-gray-300 rounded-full placeholder-gray-400 focus:outline-none"
-                placeholder="Search for category"
-              />
-              <Button
-                variant="default"
-                onClick={() => dispatch(openModal({ type: 'add' }))}
-              >
-                Add Category
-              </Button>
-            </div>
-          </div>
-          <div className="overflow-hidden">
-            <table className="min-w-full rounded-xl">
-              <thead>
-                <tr className="bg-gray-50">
-                  <th className="p-5 text-left text-sm font-semibold text-gray-900 capitalize rounded-t-xl">
-                    Id
-                  </th>
-                  <th className="p-5 text-left text-sm font-semibold text-gray-900 capitalize">
-                    Name
-                  </th>
-                  <th className="p-5 text-left text-sm font-semibold text-gray-900 capitalize">
-                    Description
-                  </th>
-                  <th className="p-5 text-left text-sm font-semibold text-gray-900 capitalize rounded-t-xl">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-300">
-                {categories.map((item, index) => (
-                  <tr
-                    key={item._id}
-                    className="bg-white transition-all duration-500 hover:bg-gray-50"
-                  >
-                    <td className="p-5 text-sm font-medium text-gray-900">
-                      {index + 1}
-                    </td>
-                    <td className="p-5 text-sm font-medium text-gray-900">
-                      {item.name}
-                    </td>
-                    <td className="p-5 text-sm font-medium text-gray-900">
-                      {item.description}
-                    </td>
-                    <td className="p-5">
-                      <div className="flex items-center gap-1">
-                        <Button
-                          onClick={() =>
-                            dispatch(openModal({ type: 'edit', data: item }))
-                          }
-                        >
-                          <Pencil />
-                        </Button>
-                        <Button
-                          onClick={() =>
-                            dispatch(openModal({ type: 'delete', data: item }))
-                          }
-                        >
-                          <Trash />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+    <div className="mx-auto max-w-7xl">
+      <SectionHeading
+        title="Categories"
+        subtitle="Organize the course catalog into learning paths."
+        action={
+          <Button onClick={() => dispatch(openModal({ type: 'add' }))}>
+            <Plus className="h-4 w-4" />
+            Add Category
+          </Button>
+        }
+      />
+
+      <div className="relative mb-6 max-w-sm">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full rounded-md border border-input bg-background py-2 pl-9 pr-3 text-sm"
+          placeholder="Search for category"
+        />
       </div>
+
+      <Reveal className="rounded-xl border border-border bg-card">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-16">#</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Description</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filtered.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="py-10 text-center text-muted-foreground">
+                  No categories yet.
+                </TableCell>
+              </TableRow>
+            ) : (
+              filtered.map((item, index) => (
+                <TableRow key={item._id}>
+                  <TableCell className="text-muted-foreground">{index + 1}</TableCell>
+                  <TableCell className="font-medium text-foreground">{item.name}</TableCell>
+                  <TableCell className="text-muted-foreground">{item.description}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => dispatch(openModal({ type: 'edit', data: item }))}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => dispatch(openModal({ type: 'delete', data: item }))}
+                      >
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </Reveal>
 
       {/* Add/Edit Category Modal */}
       <Modal

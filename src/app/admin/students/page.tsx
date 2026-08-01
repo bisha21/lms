@@ -1,6 +1,13 @@
 'use client';
 
+import { Receipt, Users } from 'lucide-react';
+
 import { useAdminOverview } from '@/features/admin/hooks';
+import StatTile from '@/_component/StatTile';
+import SectionHeading from '@/_component/SectionHeading';
+import Reveal from '@/_component/motion/Reveal';
+import { Stagger, StaggerItem } from '@/_component/motion/Stagger';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 export default function AdminStudentsPage() {
   const { data: rows = [], isLoading } = useAdminOverview();
@@ -8,50 +15,63 @@ export default function AdminStudentsPage() {
   const totalEnrollments = rows.reduce((sum, r) => sum + r.enrollmentCount, 0);
   const totalRevenue = rows.reduce((sum, r) => sum + r.revenue, 0);
 
-  if (isLoading) return <p>Loading...</p>;
+  if (isLoading) return <p className="text-muted-foreground">Loading...</p>;
 
   return (
-    <div className="flex flex-col">
-      <h1 className="text-xl font-semibold text-gray-900 mb-6">Enrollments & Revenue</h1>
+    <div className="mx-auto max-w-7xl">
+      <SectionHeading title="Enrollments &amp; Revenue" subtitle="Per-course enrollment and revenue breakdown." />
 
-      <div className="grid grid-cols-2 gap-4 mb-6 max-w-md">
-        <div className="bg-white rounded-xl p-4 border border-gray-200">
-          <p className="text-sm text-gray-500">Total enrollments</p>
-          <p className="text-2xl font-bold text-gray-900">{totalEnrollments}</p>
-        </div>
-        <div className="bg-white rounded-xl p-4 border border-gray-200">
-          <p className="text-sm text-gray-500">Total revenue</p>
-          <p className="text-2xl font-bold text-gray-900">${totalRevenue.toFixed(2)}</p>
-        </div>
-      </div>
+      <Stagger className="mb-6 grid max-w-md grid-cols-2 gap-4">
+        <StaggerItem>
+          <StatTile
+            icon={Users}
+            value={totalEnrollments}
+            label="Total enrollments"
+            colorClassName="bg-palette-1-soft text-palette-1"
+          />
+        </StaggerItem>
+        <StaggerItem>
+          <StatTile
+            icon={Receipt}
+            value={`$${totalRevenue.toFixed(2)}`}
+            label="Total revenue"
+            colorClassName="bg-palette-2-soft text-palette-2"
+          />
+        </StaggerItem>
+      </Stagger>
 
-      <table className="min-w-full rounded-xl overflow-hidden">
-        <thead>
-          <tr className="bg-gray-50 text-left text-sm text-gray-900">
-            <th className="p-4">Course</th>
-            <th className="p-4">Price</th>
-            <th className="p-4">Enrollments</th>
-            <th className="p-4">Revenue</th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
-          {rows.map((row) => (
-            <tr key={row._id} className="text-sm text-gray-900">
-              <td className="p-4">{row.title}</td>
-              <td className="p-4">{row.coursePrice > 0 ? `$${row.coursePrice}` : 'Free'}</td>
-              <td className="p-4">{row.enrollmentCount}</td>
-              <td className="p-4">${row.revenue.toFixed(2)}</td>
-            </tr>
-          ))}
-          {rows.length === 0 && (
-            <tr>
-              <td colSpan={4} className="p-4 text-center text-gray-500">
-                No courses yet
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+      <Reveal className="rounded-xl border border-border bg-card">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Course</TableHead>
+              <TableHead>Price</TableHead>
+              <TableHead>Enrollments</TableHead>
+              <TableHead>Revenue</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="py-10 text-center text-muted-foreground">
+                  No courses yet
+                </TableCell>
+              </TableRow>
+            ) : (
+              rows.map((row) => (
+                <TableRow key={row._id}>
+                  <TableCell className="font-medium text-foreground">{row.title}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {row.coursePrice > 0 ? `$${row.coursePrice}` : 'Free'}
+                  </TableCell>
+                  <TableCell className="text-foreground">{row.enrollmentCount}</TableCell>
+                  <TableCell className="font-semibold text-foreground">${row.revenue.toFixed(2)}</TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </Reveal>
     </div>
   );
 }

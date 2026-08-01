@@ -6,8 +6,10 @@ import { closestCenter, DndContext, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import Modal from '@/_component/Modal';
 import CourseForm from '@/_component/CourseForm';
+import Reveal from '@/_component/motion/Reveal';
 import { useAppDispatch, useAppSelector } from '@/redux/hooks';
 import { closeModal, openModal } from '@/redux/modal/modalSlice';
 import { useCourse, useTogglePublishCourse } from '@/features/courses/hooks';
@@ -140,18 +142,18 @@ export default function CourseBuilderPage() {
   }
 
   if (courseLoading || sectionsLoading) {
-    return <p className="max-w-4xl mx-auto px-6 py-10">Loading...</p>;
+    return <p className="mx-auto max-w-4xl px-6 py-10 text-muted-foreground">Loading...</p>;
   }
   if (!course) {
-    return <p className="max-w-4xl mx-auto px-6 py-10">Course not found.</p>;
+    return <p className="mx-auto max-w-4xl px-6 py-10 text-muted-foreground">Course not found.</p>;
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
+    <div className="mx-auto flex max-w-5xl flex-col gap-6">
+      <Reveal className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">{course.title}</h1>
-          <p className="text-sm text-gray-500">{course.courseDescription}</p>
+          <h1 className="text-xl font-semibold text-foreground">{course.title}</h1>
+          <p className="text-sm text-muted-foreground">{course.courseDescription}</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -161,29 +163,26 @@ export default function CourseBuilderPage() {
                 status: course.status === 'published' ? 'draft' : 'published',
               })
             }
-            className={`px-3 py-1 rounded-full text-xs ${
-              course.status === 'published'
-                ? 'bg-green-100 text-green-700'
-                : 'bg-gray-100 text-gray-700'
-            }`}
           >
-            {course.status === 'published' ? 'Published' : 'Draft'}
+            <Badge variant={course.status === 'published' ? 'success' : 'secondary'}>
+              {course.status === 'published' ? 'Published' : 'Draft'}
+            </Badge>
           </button>
           <Button variant="outline" onClick={() => dispatch(openModal({ type: 'edit', data: course }))}>
             Edit Details
           </Button>
         </div>
-      </div>
+      </Reveal>
 
-      <div className="flex justify-between items-center">
-        <h2 className="text-lg font-semibold text-gray-900">Curriculum</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-foreground">Curriculum</h2>
         <Button onClick={openAddSection}>
           <Plus className="h-4 w-4" /> Add Section
         </Button>
       </div>
 
       {sections.length === 0 ? (
-        <p className="text-gray-500">No sections yet — add one to get started.</p>
+        <p className="text-muted-foreground">No sections yet — add one to get started.</p>
       ) : (
         <DndContext collisionDetection={closestCenter} onDragEnd={handleSectionDragEnd}>
           <SortableContext items={sectionIds} strategy={verticalListSortingStrategy}>
@@ -233,12 +232,12 @@ export default function CourseBuilderPage() {
       >
         <form onSubmit={submitSection} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Title</label>
+            <label className="block text-sm font-medium text-foreground">Title</label>
             <input
               value={sectionTitle}
               onChange={(e) => setSectionTitle(e.target.value)}
               required
-              className="w-full mt-1 p-2 border border-gray-300 rounded-md"
+              className="w-full mt-1 p-2 border border-input bg-background rounded-md"
             />
           </div>
           <Button type="submit" className="w-full">
@@ -283,28 +282,28 @@ export default function CourseBuilderPage() {
       >
         <form onSubmit={submitLesson} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Title</label>
+            <label className="block text-sm font-medium text-foreground">Title</label>
             <input
               value={lessonTitle}
               onChange={(e) => setLessonTitle(e.target.value)}
               required
-              className="w-full mt-1 p-2 border border-gray-300 rounded-md"
+              className="w-full mt-1 p-2 border border-input bg-background rounded-md"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Description</label>
+            <label className="block text-sm font-medium text-foreground">Description</label>
             <textarea
               value={lessonDescription}
               onChange={(e) => setLessonDescription(e.target.value)}
               required
-              className="w-full mt-1 p-2 border border-gray-300 rounded-md"
+              className="w-full mt-1 p-2 border border-input bg-background rounded-md"
             />
           </div>
           {lessonModal?.mode === 'add' && (
             <>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Content type</label>
-                <div className="flex gap-4 text-sm text-gray-700">
+                <label className="block text-sm font-medium text-foreground mb-1">Content type</label>
+                <div className="flex gap-4 text-sm text-foreground">
                   <label className="flex items-center gap-1">
                     <input
                       type="radio"
@@ -325,7 +324,7 @@ export default function CourseBuilderPage() {
               </div>
               {lessonContentType === 'video' ? (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Video file</label>
+                  <label className="block text-sm font-medium text-foreground">Video file</label>
                   <input
                     type="file"
                     accept="video/*"
@@ -336,7 +335,7 @@ export default function CourseBuilderPage() {
                 </div>
               ) : (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">PDF file</label>
+                  <label className="block text-sm font-medium text-foreground">PDF file</label>
                   <input
                     type="file"
                     accept="application/pdf"

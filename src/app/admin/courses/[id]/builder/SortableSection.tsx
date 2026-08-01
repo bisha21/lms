@@ -49,26 +49,26 @@ export function SortableSection({
   }
 
   return (
-    <li ref={setNodeRef} style={style} className="bg-white border border-gray-200 rounded-lg">
+    <li ref={setNodeRef} style={style} className="bg-card border border-border rounded-lg">
       <div className="flex items-center justify-between px-4 py-3 gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <button
             {...attributes}
             {...listeners}
-            className="cursor-grab text-gray-400 hover:text-gray-600 shrink-0"
+            className="cursor-grab text-muted-foreground hover:text-foreground shrink-0"
             aria-label="Drag to reorder section"
           >
             <GripVertical className="h-4 w-4" />
           </button>
           <button
             onClick={() => setExpanded((current) => !current)}
-            className="text-gray-500 shrink-0"
+            className="text-muted-foreground shrink-0"
             aria-label={expanded ? 'Collapse section' : 'Expand section'}
           >
             {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           </button>
-          <span className="font-medium text-gray-900 truncate">{section.title}</span>
-          <span className="text-xs text-gray-400 shrink-0">
+          <span className="font-medium text-foreground truncate">{section.title}</span>
+          <span className="text-xs text-muted-foreground shrink-0">
             ({section.lessons.length} lesson{section.lessons.length === 1 ? '' : 's'})
           </span>
         </div>
@@ -87,7 +87,7 @@ export function SortableSection({
       {expanded && (
         <div className="px-4 pb-4">
           {section.lessons.length === 0 ? (
-            <p className="text-sm text-gray-500">No lessons yet.</p>
+            <p className="text-sm text-muted-foreground">No lessons yet.</p>
           ) : (
             <DndContext collisionDetection={closestCenter} onDragEnd={handleLessonDragEnd}>
               <SortableContext items={lessonIds} strategy={verticalListSortingStrategy}>
