@@ -41,10 +41,12 @@ export default function InstructorCoursesPage() {
         title="My Courses"
         subtitle="Create, edit, and manage the courses you teach."
         action={
-          <Button onClick={() => dispatch(openModal({ type: 'add' }))}>
-            <Plus className="h-4 w-4" />
-            New Course
-          </Button>
+          <Link href="/instructor/courses/new">
+            <Button>
+              <Plus className="h-4 w-4" />
+              New Course
+            </Button>
+          </Link>
         }
       />
 

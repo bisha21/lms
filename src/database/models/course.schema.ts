@@ -19,6 +19,9 @@ interface Course extends Document {
   courseDescription: string;
   coursePrice: number;
   thumbnail?: string;
+  thumbnailPublicId?: string;
+  promoVideoUrl?: string;
+  promoVideoPublicId?: string;
   duration: string;
   category: mongoose.Types.ObjectId;
   instructor: mongoose.Types.ObjectId;
@@ -51,6 +54,15 @@ const courseSchema = new Schema({
     default: 0,
   },
   thumbnail: {
+    type: String,
+  },
+  thumbnailPublicId: {
+    type: String,
+  },
+  promoVideoUrl: {
+    type: String,
+  },
+  promoVideoPublicId: {
     type: String,
   },
   duration: {

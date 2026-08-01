@@ -7,9 +7,10 @@ import { useInstructorRevenue } from '@/features/instructor/hooks';
 import { IInstructorRevenueParams } from '@/features/instructor/types';
 import StatTile from '@/_component/StatTile';
 import SectionHeading from '@/_component/SectionHeading';
-import BarChart from '@/_component/charts/BarChart';
+import LineChart from '@/_component/charts/LineChart';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 
 const RANGE_OPTIONS: { value: NonNullable<IInstructorRevenueParams['range']>; label: string }[] = [
@@ -97,52 +98,51 @@ export default function InstructorRevenuePage() {
           </div>
 
           <div className="mt-8 rounded-xl border border-border bg-card p-5">
-            <SectionHeading className="mb-4" title="Revenue trend" subtitle={`Last ${range}`} />
-            <BarChart
+            <SectionHeading className="mb-4" title="Revenue Analytics" subtitle={`Earnings trend across the last ${range}`} />
+            <LineChart
               data={revenue.revenueTrend.map((d) => ({ label: d.date, value: d.amount ?? 0 }))}
-              colorClassName="bg-palette-2"
               formatLabel={formatShortDate}
               formatValue={(v) => `$${v.toFixed(2)}`}
             />
           </div>
 
           <div className="mt-8">
-            <SectionHeading className="mb-4" title="Transactions" />
-            <div className="overflow-x-auto rounded-xl border border-border bg-card">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border text-left text-xs text-muted-foreground">
-                    <th className="p-4 font-medium">Course</th>
-                    <th className="p-4 font-medium">Amount</th>
-                    <th className="p-4 font-medium">Status</th>
-                    <th className="p-4 font-medium">Date</th>
-                  </tr>
-                </thead>
-                <tbody>
+            <SectionHeading className="mb-4" title="Transactions" subtitle="Search, filter, and review payment records." />
+            <div className="rounded-xl border border-border bg-card">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Course</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Date</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {revenue.payments.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="p-6 text-center text-muted-foreground">
+                    <TableRow>
+                      <TableCell colSpan={4} className="py-10 text-center text-muted-foreground">
                         No transactions in this range.
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ) : (
                     revenue.payments.map((payment) => (
-                      <tr key={payment._id} className="border-b border-border last:border-0">
-                        <td className="p-4 font-medium text-foreground">{payment.courseTitle}</td>
-                        <td className="p-4 text-foreground">
+                      <TableRow key={payment._id}>
+                        <TableCell className="font-medium text-foreground">{payment.courseTitle}</TableCell>
+                        <TableCell className="text-foreground">
                           {payment.currency.toUpperCase()} {payment.amount.toFixed(2)}
-                        </td>
-                        <td className="p-4">
+                        </TableCell>
+                        <TableCell>
                           <Badge variant={STATUS_VARIANT[payment.status]}>{payment.status}</Badge>
-                        </td>
-                        <td className="p-4 text-muted-foreground">
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
                           {new Date(payment.createdAt).toLocaleDateString()}
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))
                   )}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
 
             {meta && meta.totalPages > 1 && (

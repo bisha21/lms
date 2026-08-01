@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
+import type { AxiosProgressEvent } from 'axios';
 import { API } from '@/http/http';
 import { CoursesListParams, queryKeys } from '@/lib/queryKeys';
 import { useAppDispatch } from '@/redux/hooks';
@@ -117,6 +118,48 @@ export function useTogglePublishCourse() {
     mutateAsync: (args: { id: string; status: CourseStatusValue }) =>
       mutateAsync({ id: args.id, data: { status: args.status } }),
   };
+}
+
+interface UploadAssetArgs {
+  file: File;
+  onProgress?: (percent: number) => void;
+}
+
+// Reports genuine browser→server upload progress via axios' onUploadProgress — the
+// Cloudinary leg (server→Cloudinary) has no progress signal, so callers show a
+// "Processing…" state between 100% and the response resolving.
+function uploadCourseAsset(url: string) {
+  return async ({ file, onProgress }: UploadAssetArgs) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await API.post(url, formData, {
+      headers: { 'Content-Type': undefined },
+      onUploadProgress: (event: AxiosProgressEvent) => {
+        if (onProgress && event.total) {
+          onProgress(Math.round((event.loaded / event.total) * 100));
+        }
+      },
+    });
+    return response.data.data as { url: string; publicId: string };
+  };
+}
+
+export function useUploadCourseThumbnail() {
+  return useMutation({
+    mutationFn: uploadCourseAsset('/courses/thumbnail'),
+    onError: () => {
+      toast.error('Failed to upload thumbnail');
+    },
+  });
+}
+
+export function useUploadCoursePromoVideo() {
+  return useMutation({
+    mutationFn: uploadCourseAsset('/courses/promo-video'),
+    onError: () => {
+      toast.error('Failed to upload promo video');
+    },
+  });
 }
 
 export function useDeleteCourse() {

@@ -19,6 +19,7 @@ import { createCourseSchema, updateCourseSchema } from '@/lib/validate/course.sc
 import { requireAuth, requirePermission } from '../../../../middleware/auth.middleware';
 import { assertCourseOwnership, ownsCourse } from '@/lib/rbac/ownership';
 import { bypassesOwnership } from '@/lib/rbac/permissions';
+import { uploadImageBuffer, uploadVideoBuffer } from '@/lib/cloudinary';
 
 const COURSE_SORT_KEYS = ['newest', 'price', 'rating', 'popular', 'best-selling'] as const;
 type CourseSortKey = (typeof COURSE_SORT_KEYS)[number];
@@ -67,6 +68,40 @@ function sortBySectionThenOrder<T>(lessons: T[]): T[] {
     const sectionOrderDiff = (lessonA.section?.order ?? Infinity) - (lessonB.section?.order ?? Infinity);
     return sectionOrderDiff !== 0 ? sectionOrderDiff : lessonA.order - lessonB.order;
   });
+}
+
+// Both are called from the course-creation wizard's Basic Info step, before a Course
+// document necessarily exists yet — same "unscoped upload, URL attached on create/update"
+// pattern the public course thumbnail already used, generalized to a real Cloudinary asset
+// instead of a raw URL string.
+export async function uploadCourseThumbnail(req: Request) {
+  await createConnection();
+  await requirePermission('course:create');
+
+  const formData = await req.formData();
+  const file = formData.get('file');
+  if (!(file instanceof File)) {
+    throw new AppError('An image file is required', 400);
+  }
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const { url, publicId } = await uploadImageBuffer(buffer, file.name);
+
+  return NextResponse.json({ data: { url, publicId } }, { status: 201 });
+}
+
+export async function uploadCoursePromoVideo(req: Request) {
+  await createConnection();
+  await requirePermission('course:create');
+
+  const formData = await req.formData();
+  const file = formData.get('file');
+  if (!(file instanceof File)) {
+    throw new AppError('A video file is required', 400);
+  }
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const { url, publicId } = await uploadVideoBuffer(buffer, file.name);
+
+  return NextResponse.json({ data: { url, publicId } }, { status: 201 });
 }
 
 export async function createCourse(req: Request) {

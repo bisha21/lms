@@ -44,10 +44,32 @@ export function uploadRawBuffer(
   });
 }
 
+export function uploadImageBuffer(
+  buffer: Buffer,
+  filename: string
+): Promise<{ url: string; publicId: string }> {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      { resource_type: 'image', folder: 'lms/courses', filename_override: filename },
+      (error, result) => {
+        if (error || !result) {
+          return reject(error ?? new Error('Cloudinary upload failed'));
+        }
+        resolve({ url: result.secure_url, publicId: result.public_id });
+      }
+    );
+    Readable.from(buffer).pipe(uploadStream);
+  });
+}
+
 export function destroyVideo(publicId: string) {
   return cloudinary.uploader.destroy(publicId, { resource_type: 'video' });
 }
 
 export function destroyRaw(publicId: string) {
   return cloudinary.uploader.destroy(publicId, { resource_type: 'raw' });
+}
+
+export function destroyImage(publicId: string) {
+  return cloudinary.uploader.destroy(publicId, { resource_type: 'image' });
 }

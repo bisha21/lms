@@ -8,6 +8,9 @@ export const createCourseSchema = z.object({
   duration: z.string().min(1, 'Duration is required'),
   category: z.string().min(1, 'Category is required'),
   thumbnail: z.string().optional(),
+  thumbnailPublicId: z.string().optional(),
+  promoVideoUrl: z.string().optional(),
+  promoVideoPublicId: z.string().optional(),
   level: z.enum(['beginner', 'intermediate', 'advanced']).optional(),
   language: z.string().min(1).optional(),
 });

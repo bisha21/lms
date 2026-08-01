@@ -17,6 +17,9 @@ export interface ICourseForData {
   category: ICategory | string;
   duration: string;
   thumbnail?: string;
+  thumbnailPublicId?: string;
+  promoVideoUrl?: string;
+  promoVideoPublicId?: string;
   status?: CourseStatusValue;
   level?: CourseLevelValue;
   language?: string;
