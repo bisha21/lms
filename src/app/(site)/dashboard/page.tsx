@@ -86,7 +86,7 @@ export default function StudentDashboardPage() {
         ) : continueLearning.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             No courses in progress yet.{' '}
-            <Link href="/courses" className="font-medium text-primary hover:underline">
+            <Link href="/courses" className="font-medium text-brand hover:underline">
               Browse courses
             </Link>
             .
@@ -104,7 +104,7 @@ export default function StudentDashboardPage() {
         <SectionHeading
           title="My courses"
           action={
-            <Link href="/wishlist" className="text-sm font-medium text-primary hover:underline">
+            <Link href="/wishlist" className="text-sm font-medium text-brand hover:underline">
               View wishlist
             </Link>
           }
@@ -137,7 +137,7 @@ export default function StudentDashboardPage() {
             {tab === 'in-progress'
               ? 'No courses in progress yet.'
               : 'You are not enrolled in any courses yet.'}{' '}
-            <Link href="/courses" className="font-medium text-primary hover:underline">
+            <Link href="/courses" className="font-medium text-brand hover:underline">
               Browse the catalog
             </Link>
             .

@@ -20,7 +20,7 @@ export default function CategoriesSection() {
         action={
           <Link
             href="/courses"
-            className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+            className="flex items-center gap-1 text-sm font-medium text-brand hover:underline"
           >
             View all <ArrowRight className="h-3.5 w-3.5" />
           </Link>

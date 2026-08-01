@@ -79,7 +79,7 @@ export default function CourseFilterSidebar({
     <aside className="flex w-full flex-col gap-6 lg:w-64 lg:shrink-0">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-foreground">Filters</h2>
-        <button type="button" onClick={onReset} className="text-xs font-medium text-primary hover:underline">
+        <button type="button" onClick={onReset} className="text-xs font-medium text-brand hover:underline">
           Reset all
         </button>
       </div>

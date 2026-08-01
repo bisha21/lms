@@ -11,6 +11,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "seed": "tsx scripts/seed.ts",
     "role:promote": "tsx scripts/promote-user-role.ts",
     "migrate:lessons-to-sections": "tsx scripts/migrate-lessons-to-sections.ts"
   },

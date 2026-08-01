@@ -19,7 +19,7 @@ export default function MyCoursesPage() {
       {enrollments.length === 0 ? (
         <p className="text-sm text-muted-foreground">
           You are not enrolled in any courses yet.{' '}
-          <Link href="/courses" className="font-medium text-primary hover:underline">
+          <Link href="/courses" className="font-medium text-brand hover:underline">
             Browse the catalog
           </Link>
           .

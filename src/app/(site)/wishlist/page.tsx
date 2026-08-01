@@ -22,7 +22,7 @@ export default function WishlistPage() {
       {items.length === 0 ? (
         <p className="text-sm text-muted-foreground">
           Your wishlist is empty.{' '}
-          <Link href="/courses" className="font-medium text-primary hover:underline">
+          <Link href="/courses" className="font-medium text-brand hover:underline">
             Browse the catalog
           </Link>
           .

@@ -62,6 +62,10 @@ export default {
   			},
   			rating: 'hsl(var(--rating))',
   			wishlist: 'hsl(var(--wishlist))',
+  			brand: {
+  				DEFAULT: 'hsl(var(--brand))',
+  				foreground: 'hsl(var(--brand-foreground))'
+  			},
   			palette: {
   				'1': { DEFAULT: 'hsl(var(--palette-1))', soft: 'hsl(var(--palette-1-soft))' },
   				'2': { DEFAULT: 'hsl(var(--palette-2))', soft: 'hsl(var(--palette-2-soft))' },
