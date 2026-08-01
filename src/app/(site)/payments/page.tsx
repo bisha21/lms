@@ -1,42 +1,68 @@
 'use client';
 
+import { Receipt } from 'lucide-react';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { useMyPayments } from '@/features/payments/hooks';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import Reveal from '@/_component/motion/Reveal';
+
+const STATUS_VARIANT = {
+  completed: 'success',
+  pending: 'warning',
+  failed: 'destructive',
+} as const;
 
 export default function PaymentsPage() {
   const { status } = useRequireAuth();
   const { data: payments = [] } = useMyPayments(status === 'authenticated');
 
-  if (status === 'loading') return <p className="max-w-4xl mx-auto px-6 py-10">Loading...</p>;
+  if (status === 'loading') return <p className="mx-auto max-w-4xl px-6 py-10 text-muted-foreground">Loading...</p>;
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-10">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Payment history</h1>
+    <div className="mx-auto max-w-4xl px-6 py-10">
+      <Reveal>
+        <h1 className="mb-6 text-2xl font-bold text-foreground">Payment history</h1>
+      </Reveal>
+
       {payments.length === 0 ? (
-        <p className="text-gray-500">No payments yet.</p>
+        <Reveal>
+          <div className="rounded-xl border border-dashed border-border p-10 text-center">
+            <Receipt className="mx-auto h-8 w-8 text-muted-foreground" />
+            <p className="mt-3 text-sm text-muted-foreground">No payments yet.</p>
+          </div>
+        </Reveal>
       ) : (
-        <table className="min-w-full bg-white rounded-xl overflow-hidden">
-          <thead>
-            <tr className="bg-gray-50 text-left text-sm text-gray-700">
-              <th className="p-4">Course</th>
-              <th className="p-4">Amount</th>
-              <th className="p-4">Status</th>
-              <th className="p-4">Date</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {payments.map((payment) => (
-              <tr key={payment._id} className="text-sm text-gray-900">
-                <td className="p-4">{payment.course?.title}</td>
-                <td className="p-4">
-                  {payment.amount} {payment.currency.toUpperCase()}
-                </td>
-                <td className="p-4 capitalize">{payment.status}</td>
-                <td className="p-4">{new Date(payment.createdAt).toLocaleDateString()}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <Reveal>
+          <div className="rounded-xl border border-border bg-card">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Course</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Date</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {payments.map((payment) => (
+                  <TableRow key={payment._id}>
+                    <TableCell className="font-medium text-foreground">{payment.course?.title}</TableCell>
+                    <TableCell className="text-foreground">
+                      {payment.amount} {payment.currency.toUpperCase()}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={STATUS_VARIANT[payment.status]}>{payment.status}</Badge>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {new Date(payment.createdAt).toLocaleDateString()}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </Reveal>
       )}
     </div>
   );
