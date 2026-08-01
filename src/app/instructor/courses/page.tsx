@@ -6,20 +6,17 @@ import { useSession } from 'next-auth/react';
 import { BookOpen, Pencil, Plus, Search, Star, Trash, Users } from 'lucide-react';
 
 import { useCourses, useDeleteCourse, useTogglePublishCourse } from '@/features/courses/hooks';
-import { useAppDispatch, useAppSelector } from '@/redux/hooks';
-import { closeModal, openModal } from '@/redux/modal/modalSlice';
+import { ICourse } from '@/features/courses/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Modal from '@/_component/Modal';
-import CourseForm from '@/_component/CourseForm';
 import SectionHeading from '@/_component/SectionHeading';
 
 export default function InstructorCoursesPage() {
   const { data: session } = useSession();
   const instructorId = session?.user?.id;
   const [search, setSearch] = useState('');
-  const dispatch = useAppDispatch();
-  const { isOpen, type, data: modalData } = useAppSelector((store) => store.modal);
+  const [deletingCourse, setDeletingCourse] = useState<ICourse | null>(null);
 
   const { data, isLoading } = useCourses(
     instructorId ? { instructor: instructorId, limit: 100, sort: 'newest' } : undefined
@@ -32,7 +29,8 @@ export default function InstructorCoursesPage() {
   );
 
   const handleDelete = () => {
-    if (modalData?._id) deleteCourse.mutate(modalData._id);
+    if (deletingCourse?._id) deleteCourse.mutate(deletingCourse._id);
+    setDeletingCourse(null);
   };
 
   return (
@@ -133,18 +131,12 @@ export default function InstructorCoursesPage() {
                   <td className="p-4 font-semibold text-foreground">${course.coursePrice}</td>
                   <td className="p-4">
                     <div className="flex items-center gap-1">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => dispatch(openModal({ type: 'edit', data: course }))}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => dispatch(openModal({ type: 'delete', data: course }))}
-                      >
+                      <Link href={`/instructor/courses/${course._id}/edit`}>
+                        <Button variant="outline" size="sm">
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                      <Button variant="outline" size="sm" onClick={() => setDeletingCourse(course)}>
                         <Trash className="h-4 w-4" />
                       </Button>
                     </div>
@@ -157,20 +149,8 @@ export default function InstructorCoursesPage() {
       )}
 
       <Modal
-        open={isOpen && (type === 'add' || type === 'edit')}
-        onOpenChange={(open) => !open && dispatch(closeModal())}
-        header={{
-          title: type === 'edit' ? 'Edit Course' : 'Create a new course',
-          description:
-            type === 'edit' ? 'Update the course details.' : 'Fill out the details to create your course.',
-        }}
-      >
-        <CourseForm defaultValues={type === 'edit' ? modalData : undefined} />
-      </Modal>
-
-      <Modal
-        open={isOpen && type === 'delete'}
-        onOpenChange={(open) => !open && dispatch(closeModal())}
+        open={!!deletingCourse}
+        onOpenChange={(open) => !open && setDeletingCourse(null)}
         header={{
           title: 'Delete Confirmation',
           description: 'Are you sure you want to delete this course? This cannot be undone.',
@@ -180,7 +160,7 @@ export default function InstructorCoursesPage() {
           <Button variant="destructive" onClick={handleDelete}>
             Yes, Delete
           </Button>
-          <Button onClick={() => dispatch(closeModal())}>Cancel</Button>
+          <Button onClick={() => setDeletingCourse(null)}>Cancel</Button>
         </div>
       </Modal>
     </div>
