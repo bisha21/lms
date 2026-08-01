@@ -11,6 +11,7 @@ import CourseCard from '@/_component/course/CourseCard';
 import CourseFilterSidebar from '@/_component/course/CourseFilterSidebar';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { Stagger, StaggerItem } from '@/_component/motion/Stagger';
 
 const SORT_OPTIONS: { value: CourseSortParam; label: string }[] = [
   { value: 'newest', label: 'Newest' },
@@ -146,15 +147,28 @@ function CoursesPageContent() {
 
         <div className="flex-1">
           {isLoading ? (
-            <p className="text-sm text-muted-foreground">Loading...</p>
+            <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="animate-pulse overflow-hidden rounded-xl border border-border bg-card">
+                  <div className="aspect-video w-full bg-muted" />
+                  <div className="space-y-2 p-4">
+                    <div className="h-4 w-3/4 rounded bg-muted" />
+                    <div className="h-3 w-1/2 rounded bg-muted" />
+                    <div className="h-5 w-1/3 rounded bg-muted" />
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : courses.length === 0 ? (
             <p className="text-sm text-muted-foreground">No courses found.</p>
           ) : (
-            <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+            <Stagger className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
               {courses.map((course) => (
-                <CourseCard key={course._id} course={course} />
+                <StaggerItem key={course._id}>
+                  <CourseCard course={course} />
+                </StaggerItem>
               ))}
-            </div>
+            </Stagger>
           )}
 
           {meta && meta.totalPages > 1 && (
