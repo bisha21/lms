@@ -8,7 +8,7 @@ const TESTIMONIALS = [
     role: 'Frontend Developer',
     quote:
       'The course quality is outstanding. Each lesson is structured logically and the instructors explain complex topics in a way that actually sticks.',
-    color: 'bg-blue-500/10 text-blue-600',
+    color: 'bg-palette-1-soft text-palette-1',
   },
   {
     initials: 'MK',
@@ -16,7 +16,7 @@ const TESTIMONIALS = [
     role: 'Product Designer',
     quote:
       'Beautifully designed platform. The courses are practical, project-based, and helped me land freelance work within weeks.',
-    color: 'bg-purple-500/10 text-purple-600',
+    color: 'bg-palette-3-soft text-palette-3',
   },
   {
     initials: 'TN',
@@ -24,7 +24,7 @@ const TESTIMONIALS = [
     role: 'Data Analyst',
     quote:
       'I love how self-paced everything is. The dashboards keep me motivated and I can actually see my progress add up over time.',
-    color: 'bg-emerald-500/10 text-emerald-600',
+    color: 'bg-palette-2-soft text-palette-2',
   },
 ];
 

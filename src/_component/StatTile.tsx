@@ -14,7 +14,7 @@ export default function StatTile({
   icon: Icon,
   value,
   label,
-  colorClassName = 'bg-blue-500/10 text-blue-600',
+  colorClassName = 'bg-palette-1-soft text-palette-1',
   className,
 }: StatTileProps) {
   return (

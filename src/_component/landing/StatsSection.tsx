@@ -21,19 +21,19 @@ export default function StatsSection() {
           icon={BookOpen}
           value={totalCourses}
           label="Courses available"
-          colorClassName="bg-blue-500/10 text-blue-600"
+          colorClassName="bg-palette-1-soft text-palette-1"
         />
         <StatTile
           icon={Layers}
           value={categories.length}
           label="Categories to explore"
-          colorClassName="bg-emerald-500/10 text-emerald-600"
+          colorClassName="bg-palette-2-soft text-palette-2"
         />
         <StatTile
           icon={GraduationCap}
           value={instructors.length}
           label="Expert instructors"
-          colorClassName="bg-purple-500/10 text-purple-600"
+          colorClassName="bg-palette-3-soft text-palette-3"
         />
       </div>
     </section>

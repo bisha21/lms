@@ -17,18 +17,18 @@ import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const PALETTE: { icon: LucideIcon; bg: string; fg: string }[] = [
-  { icon: Braces, bg: 'bg-blue-500/10', fg: 'text-blue-600' },
-  { icon: LineChart, bg: 'bg-emerald-500/10', fg: 'text-emerald-600' },
-  { icon: Palette, bg: 'bg-purple-500/10', fg: 'text-purple-600' },
-  { icon: Megaphone, bg: 'bg-amber-500/10', fg: 'text-amber-600' },
-  { icon: Briefcase, bg: 'bg-rose-500/10', fg: 'text-rose-600' },
-  { icon: Smartphone, bg: 'bg-cyan-500/10', fg: 'text-cyan-600' },
-  { icon: ShieldCheck, bg: 'bg-indigo-500/10', fg: 'text-indigo-600' },
-  { icon: Camera, bg: 'bg-pink-500/10', fg: 'text-pink-600' },
-  { icon: Music, bg: 'bg-teal-500/10', fg: 'text-teal-600' },
-  { icon: Globe, bg: 'bg-sky-500/10', fg: 'text-sky-600' },
-  { icon: Cpu, bg: 'bg-orange-500/10', fg: 'text-orange-600' },
-  { icon: BarChart3, bg: 'bg-violet-500/10', fg: 'text-violet-600' },
+  { icon: Braces, bg: 'bg-palette-1-soft', fg: 'text-palette-1' },
+  { icon: LineChart, bg: 'bg-palette-2-soft', fg: 'text-palette-2' },
+  { icon: Palette, bg: 'bg-palette-3-soft', fg: 'text-palette-3' },
+  { icon: Megaphone, bg: 'bg-palette-4-soft', fg: 'text-palette-4' },
+  { icon: Briefcase, bg: 'bg-palette-5-soft', fg: 'text-palette-5' },
+  { icon: Smartphone, bg: 'bg-palette-6-soft', fg: 'text-palette-6' },
+  { icon: ShieldCheck, bg: 'bg-palette-1-soft', fg: 'text-palette-1' },
+  { icon: Camera, bg: 'bg-palette-5-soft', fg: 'text-palette-5' },
+  { icon: Music, bg: 'bg-palette-2-soft', fg: 'text-palette-2' },
+  { icon: Globe, bg: 'bg-palette-6-soft', fg: 'text-palette-6' },
+  { icon: Cpu, bg: 'bg-palette-4-soft', fg: 'text-palette-4' },
+  { icon: BarChart3, bg: 'bg-palette-3-soft', fg: 'text-palette-3' },
 ];
 
 function hashString(value: string) {

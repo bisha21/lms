@@ -21,7 +21,7 @@ export default function RatingStars({ rating, reviewCount, size = 'sm', classNam
             key={i}
             className={cn(
               starSize,
-              i < rounded ? 'fill-amber-400 text-amber-400' : 'fill-none text-muted-foreground/40'
+              i < rounded ? 'fill-rating text-rating' : 'fill-none text-muted-foreground/40'
             )}
           />
         ))}

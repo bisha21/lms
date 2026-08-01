@@ -96,7 +96,7 @@ export default function CourseCard({
             aria-pressed={isWishlisted}
             className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-background/80 backdrop-blur transition-colors hover:bg-background"
           >
-            <Heart className={cn('h-4 w-4', isWishlisted ? 'fill-rose-500 text-rose-500' : 'text-foreground')} />
+            <Heart className={cn('h-4 w-4', isWishlisted ? 'fill-wishlist text-wishlist' : 'text-foreground')} />
           </button>
         )}
       </div>

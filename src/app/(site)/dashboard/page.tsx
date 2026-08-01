@@ -57,25 +57,25 @@ export default function StudentDashboardPage() {
           icon={BookOpen}
           value={enrollments.length}
           label="Enrolled courses"
-          colorClassName="bg-blue-500/10 text-blue-600"
+          colorClassName="bg-palette-1-soft text-palette-1"
         />
         <StatTile
           icon={Flame}
           value={continueLearning.length}
           label="In progress"
-          colorClassName="bg-amber-500/10 text-amber-600"
+          colorClassName="bg-palette-4-soft text-palette-4"
         />
         <StatTile
           icon={Heart}
           value={wishlistItems.length}
           label="Wishlist saved"
-          colorClassName="bg-rose-500/10 text-rose-600"
+          colorClassName="bg-palette-5-soft text-palette-5"
         />
         <StatTile
           icon={Receipt}
           value={payments.length}
           label="Payments"
-          colorClassName="bg-emerald-500/10 text-emerald-600"
+          colorClassName="bg-palette-2-soft text-palette-2"
         />
       </div>
 

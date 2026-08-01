@@ -39,7 +39,8 @@ export default {
   			},
   			destructive: {
   				DEFAULT: 'hsl(var(--destructive))',
-  				foreground: 'hsl(var(--destructive-foreground))'
+  				foreground: 'hsl(var(--destructive-foreground))',
+  				soft: 'hsl(var(--destructive-soft))'
   			},
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',
@@ -50,6 +51,24 @@ export default {
   				'3': 'hsl(var(--chart-3))',
   				'4': 'hsl(var(--chart-4))',
   				'5': 'hsl(var(--chart-5))'
+  			},
+  			success: {
+  				DEFAULT: 'hsl(var(--success))',
+  				soft: 'hsl(var(--success-soft))'
+  			},
+  			warning: {
+  				DEFAULT: 'hsl(var(--warning))',
+  				soft: 'hsl(var(--warning-soft))'
+  			},
+  			rating: 'hsl(var(--rating))',
+  			wishlist: 'hsl(var(--wishlist))',
+  			palette: {
+  				'1': { DEFAULT: 'hsl(var(--palette-1))', soft: 'hsl(var(--palette-1-soft))' },
+  				'2': { DEFAULT: 'hsl(var(--palette-2))', soft: 'hsl(var(--palette-2-soft))' },
+  				'3': { DEFAULT: 'hsl(var(--palette-3))', soft: 'hsl(var(--palette-3-soft))' },
+  				'4': { DEFAULT: 'hsl(var(--palette-4))', soft: 'hsl(var(--palette-4-soft))' },
+  				'5': { DEFAULT: 'hsl(var(--palette-5))', soft: 'hsl(var(--palette-5-soft))' },
+  				'6': { DEFAULT: 'hsl(var(--palette-6))', soft: 'hsl(var(--palette-6-soft))' }
   			}
   		},
   		borderRadius: {
