@@ -7,6 +7,7 @@ export interface ICoursePerformance {
   enrollmentCount: number;
   revenue: number;
   averageRating: number | null;
+  reviewCount: number;
   completionRate: number | null;
   createdAt: string;
 }
@@ -32,26 +33,35 @@ export interface IInstructorDashboard {
   enrolledStudentsCount: number;
   averageRating: number | null;
   averageCompletionRate: number | null;
+  revenueDeltaPct: number | null;
+  newEnrollmentsThisMonth: number;
+  reviewCount: number;
   revenueTrend: ITrendPoint[];
   enrollmentTrend: ITrendPoint[];
   recentActivity: IActivityItem[];
   coursePerformance: ICoursePerformance[];
 }
 
-export interface IInstructorStudentCourse {
-  courseId: string;
-  title: string;
-  enrolledAt: string;
-  percent: number;
-}
-
-export interface IInstructorStudent {
-  _id: string;
+export interface IInstructorStudentRow {
+  enrollmentId: string;
+  studentId: string;
   username: string;
   email: string;
   profileImage?: string;
-  enrolledCourses: IInstructorStudentCourse[];
+  courseId: string;
+  courseTitle: string;
+  percent: number;
+  lastActive: string;
+  enrolledAt: string;
   totalSpent: number;
+}
+
+export interface IInstructorStudents {
+  students: IInstructorStudentRow[];
+  totalStudents: number;
+  activeThisWeek: number;
+  averageProgress: number;
+  completionRate: number;
 }
 
 export interface IInstructorPayment {

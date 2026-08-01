@@ -127,4 +127,53 @@ describe('instructor dashboard controller', () => {
 
     expect(body.data.coursePerformance[0].completionRate).toBe(25);
   });
+
+  it('computes revenueDeltaPct comparing the last 30 days against the prior 30 days', async () => {
+    const instructorId = new mongoose.Types.ObjectId().toString();
+    const course = await createCourseFor(instructorId);
+    const student = new mongoose.Types.ObjectId();
+
+    const now = new Date();
+    const tenDaysAgo = new Date(now);
+    tenDaysAgo.setUTCDate(tenDaysAgo.getUTCDate() - 10);
+    const fortyDaysAgo = new Date(now);
+    fortyDaysAgo.setUTCDate(fortyDaysAgo.getUTCDate() - 40);
+
+    await Payment.create([
+      {
+        student,
+        course: course._id,
+        amount: 150,
+        status: PaymentStatus.Completed,
+        createdAt: tenDaysAgo,
+      },
+      {
+        student,
+        course: course._id,
+        amount: 100,
+        status: PaymentStatus.Completed,
+        createdAt: fortyDaysAgo,
+      },
+    ]);
+
+    mockGetServerSession.mockResolvedValue({ user: { id: instructorId, role: 'instructor' } });
+    const response = await getInstructorDashboard();
+    const body = await response.json();
+
+    // last 30 days = 150, prior 30 days = 100 → +50%
+    expect(body.data.revenueDeltaPct).toBe(50);
+  });
+
+  it('returns a null revenueDeltaPct when there is no prior-period revenue to compare against', async () => {
+    const instructorId = new mongoose.Types.ObjectId().toString();
+    const course = await createCourseFor(instructorId);
+    const student = new mongoose.Types.ObjectId();
+    await Payment.create({ student, course: course._id, amount: 50, status: PaymentStatus.Completed });
+
+    mockGetServerSession.mockResolvedValue({ user: { id: instructorId, role: 'instructor' } });
+    const response = await getInstructorDashboard();
+    const body = await response.json();
+
+    expect(body.data.revenueDeltaPct).toBeNull();
+  });
 });

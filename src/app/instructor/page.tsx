@@ -72,24 +72,30 @@ export default function InstructorDashboardPage() {
           icon={DollarSign}
           value={`$${data.totalRevenue.toFixed(2)}`}
           label="Total revenue"
+          delta={data.revenueDeltaPct !== null ? `${data.revenueDeltaPct > 0 ? '+' : ''}${data.revenueDeltaPct}% vs last 30 days` : undefined}
+          deltaTone={data.revenueDeltaPct !== null && data.revenueDeltaPct >= 0 ? 'positive' : 'neutral'}
           colorClassName="bg-palette-2-soft text-palette-2"
         />
         <StatTile
           icon={Users}
           value={data.enrolledStudentsCount}
           label="Total students"
+          delta={`${data.newEnrollmentsThisMonth} new this month`}
+          deltaTone="positive"
           colorClassName="bg-palette-1-soft text-palette-1"
         />
         <StatTile
           icon={Award}
           value={data.averageRating !== null ? `${data.averageRating}/5` : '—'}
           label="Course rating"
+          delta={`from ${data.reviewCount} review${data.reviewCount === 1 ? '' : 's'}`}
           colorClassName="bg-palette-3-soft text-palette-3"
         />
         <StatTile
           icon={CheckCircle2}
           value={data.averageCompletionRate !== null ? `${data.averageCompletionRate}%` : '—'}
           label="Completion rate"
+          delta="course average"
           colorClassName="bg-palette-6-soft text-palette-6"
         />
       </div>

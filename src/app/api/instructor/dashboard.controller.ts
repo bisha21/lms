@@ -28,6 +28,11 @@ export async function getInstructorDashboard() {
   const since = new Date();
   since.setUTCDate(since.getUTCDate() - TREND_DAYS);
   since.setUTCHours(0, 0, 0, 0);
+  const priorSince = new Date(since);
+  priorSince.setUTCDate(priorSince.getUTCDate() - TREND_DAYS);
+  const monthStart = new Date();
+  monthStart.setUTCDate(1);
+  monthStart.setUTCHours(0, 0, 0, 0);
 
   const [courses, coursePerformance] = await Promise.all([
     Course.find({ instructor: instructorId, isDeleted: false }).select('status'),
@@ -64,6 +69,7 @@ export async function getInstructorDashboard() {
               null,
             ],
           },
+          reviewCount: { $size: '$reviews' },
           totalLessons: { $size: '$lessons' },
           completedLessonsSum: {
             $sum: { $map: { input: '$progressDocs', as: 'p', in: { $size: '$$p.completedLessons' } } },
@@ -100,6 +106,7 @@ export async function getInstructorDashboard() {
           enrollmentCount: 1,
           revenue: 1,
           averageRating: 1,
+          reviewCount: 1,
           completionRate: 1,
           createdAt: 1,
         },
@@ -112,7 +119,15 @@ export async function getInstructorDashboard() {
   const publishedCount = courses.filter((c) => c.status === CourseStatus.PUBLISHED).length;
   const draftCount = courses.filter((c) => c.status === CourseStatus.DRAFT).length;
 
-  const [distinctStudents, revenueByDay, enrollmentsByDay, recentEnrollments, recentReviews] = await Promise.all([
+  const [
+    distinctStudents,
+    revenueByDay,
+    enrollmentsByDay,
+    recentEnrollments,
+    recentReviews,
+    priorRevenueResult,
+    newEnrollmentsThisMonth,
+  ] = await Promise.all([
     Enrollment.aggregate([
       { $match: { course: { $in: courseIds } } },
       { $group: { _id: '$student' } },
@@ -152,6 +167,19 @@ export async function getInstructorDashboard() {
       .limit(ACTIVITY_LIMIT)
       .populate('student', 'username')
       .populate('course', 'title'),
+    // Prior 30-day window (day 60 to day 30 ago), used only to compute the revenue
+    // delta shown next to the Total Revenue tile.
+    Payment.aggregate([
+      {
+        $match: {
+          course: { $in: courseIds },
+          status: PaymentStatus.Completed,
+          createdAt: { $gte: priorSince, $lt: since },
+        },
+      },
+      { $group: { _id: null, total: { $sum: '$amount' } } },
+    ]),
+    Enrollment.countDocuments({ course: { $in: courseIds }, enrolledAt: { $gte: monthStart } }),
   ]);
 
   const revenueByDayMap = new Map(revenueByDay.map((d) => [d._id as string, d.amount as number]));
@@ -172,6 +200,12 @@ export async function getInstructorDashboard() {
       : null;
 
   const totalRevenue = coursePerformance.reduce((sum, c) => sum + (c.revenue ?? 0), 0);
+  const reviewCount = coursePerformance.reduce((sum, c) => sum + (c.reviewCount ?? 0), 0);
+
+  const last30Revenue = revenueTrend.reduce((sum, d) => sum + d.amount, 0);
+  const priorRevenue = priorRevenueResult[0]?.total ?? 0;
+  const revenueDeltaPct =
+    priorRevenue > 0 ? Math.round(((last30Revenue - priorRevenue) / priorRevenue) * 1000) / 10 : null;
 
   type Activity = { type: 'enrollment' | 'review'; courseTitle: string; actor: string; date: Date; rating?: number };
   const activity: Activity[] = [
@@ -201,6 +235,9 @@ export async function getInstructorDashboard() {
         enrolledStudentsCount: distinctStudents[0]?.count ?? 0,
         averageRating,
         averageCompletionRate,
+        revenueDeltaPct,
+        newEnrollmentsThisMonth,
+        reviewCount,
         revenueTrend,
         enrollmentTrend,
         recentActivity: activity,

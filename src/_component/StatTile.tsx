@@ -6,6 +6,9 @@ interface StatTileProps {
   icon: LucideIcon;
   value: string | number;
   label: string;
+  /** Small line under the label — e.g. "+12.4% vs last 30 days" or "from 214 reviews". */
+  delta?: string;
+  deltaTone?: 'positive' | 'neutral';
   colorClassName?: string;
   className?: string;
 }
@@ -14,6 +17,8 @@ export default function StatTile({
   icon: Icon,
   value,
   label,
+  delta,
+  deltaTone = 'neutral',
   colorClassName = 'bg-palette-1-soft text-palette-1',
   className,
 }: StatTileProps) {
@@ -30,6 +35,16 @@ export default function StatTile({
       <div className="min-w-0">
         <p className="truncate text-xl font-bold text-foreground">{value}</p>
         <p className="truncate text-xs text-muted-foreground">{label}</p>
+        {delta && (
+          <p
+            className={cn(
+              'truncate text-[11px] font-medium',
+              deltaTone === 'positive' ? 'text-success' : 'text-muted-foreground'
+            )}
+          >
+            {delta}
+          </p>
+        )}
       </div>
     </div>
   );

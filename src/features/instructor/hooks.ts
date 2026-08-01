@@ -8,7 +8,7 @@ import {
   IInstructorDashboard,
   IInstructorRevenue,
   IInstructorRevenueParams,
-  IInstructorStudent,
+  IInstructorStudents,
 } from './types';
 
 export function useInstructorDashboard(enabled = true) {
@@ -27,7 +27,7 @@ export function useInstructorStudents(enabled = true) {
     queryKey: queryKeys.instructor.students,
     queryFn: async () => {
       const response = await API.get('/instructor/students');
-      return response.data.data as IInstructorStudent[];
+      return response.data.data as IInstructorStudents;
     },
     enabled,
   });

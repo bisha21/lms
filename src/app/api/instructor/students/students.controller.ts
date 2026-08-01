@@ -8,6 +8,8 @@ import { Progress } from '@/database/models/progress.model';
 import { Payment, PaymentStatus } from '@/database/models/payment.model';
 import { requirePermission } from '../../../../../middleware/auth.middleware';
 
+const ACTIVE_WINDOW_DAYS = 7;
+
 interface PopulatedStudent {
   _id: mongoose.Types.ObjectId;
   username?: string;
@@ -19,6 +21,7 @@ interface PopulatedCourse {
   title?: string;
 }
 interface PopulatedEnrollment {
+  _id: mongoose.Types.ObjectId;
   student: PopulatedStudent;
   course: PopulatedCourse;
   enrolledAt: Date;
@@ -48,10 +51,13 @@ export async function getInstructorStudents() {
 
   const lessonCountByCourse = new Map(lessonCounts.map((l) => [l._id.toString(), l.count as number]));
   const progressByKey = new Map(
-    progressDocs.map((p) => [`${p.student.toString()}_${p.course.toString()}`, p.completedLessons.length])
+    progressDocs.map((p) => [
+      `${p.student.toString()}_${p.course.toString()}`,
+      { completed: p.completedLessons.length, updatedAt: p.get('updatedAt') as Date | undefined },
+    ])
   );
 
-  const studentIds = [...new Set(enrollments.map((e) => e.student._id.toString()))].map(
+  const studentIds = [...new Set(enrollments.map((e) => e.student?._id?.toString()).filter(Boolean))].map(
     (id) => new mongoose.Types.ObjectId(id)
   );
   const payments = await Payment.find({
@@ -65,53 +71,53 @@ export async function getInstructorStudents() {
     spentByStudent.set(key, (spentByStudent.get(key) ?? 0) + payment.amount);
   }
 
-  const byStudent = new Map<
-    string,
-    {
-      _id: string;
-      username: string;
-      email: string;
-      profileImage?: string;
-      enrolledCourses: { courseId: string; title: string; enrolledAt: Date; percent: number }[];
-      totalSpent: number;
-    }
-  >();
+  const activeSince = new Date();
+  activeSince.setUTCDate(activeSince.getUTCDate() - ACTIVE_WINDOW_DAYS);
 
-  for (const enrollment of enrollments) {
-    const student = enrollment.student;
-    const course = enrollment.course;
-    if (!student?._id || !course?._id) continue;
-    const studentKey = student._id.toString();
-    const courseKey = course._id.toString();
+  const rows = enrollments
+    .filter((e) => e.student?._id && e.course?._id)
+    .map((enrollment) => {
+      const studentKey = enrollment.student._id.toString();
+      const courseKey = enrollment.course._id.toString();
+      const totalLessons = lessonCountByCourse.get(courseKey) ?? 0;
+      const progress = progressByKey.get(`${studentKey}_${courseKey}`);
+      const percent = totalLessons > 0 ? Math.round(((progress?.completed ?? 0) / totalLessons) * 100) : 0;
+      const lastActive = progress?.updatedAt ?? enrollment.enrolledAt;
 
-    if (!byStudent.has(studentKey)) {
-      byStudent.set(studentKey, {
-        _id: studentKey,
-        username: student.username ?? 'Unknown',
-        email: student.email ?? '',
-        profileImage: student.profileImage,
-        enrolledCourses: [],
+      return {
+        enrollmentId: enrollment._id.toString(),
+        studentId: studentKey,
+        username: enrollment.student.username ?? 'Unknown',
+        email: enrollment.student.email ?? '',
+        profileImage: enrollment.student.profileImage,
+        courseId: courseKey,
+        courseTitle: enrollment.course.title ?? 'Untitled course',
+        percent,
+        lastActive,
+        enrolledAt: enrollment.enrolledAt,
         totalSpent: spentByStudent.get(studentKey) ?? 0,
-      });
-    }
-
-    const totalLessons = lessonCountByCourse.get(courseKey) ?? 0;
-    const completed = progressByKey.get(`${studentKey}_${courseKey}`) ?? 0;
-    const percent = totalLessons > 0 ? Math.round((completed / totalLessons) * 100) : 0;
-
-    byStudent.get(studentKey)!.enrolledCourses.push({
-      courseId: courseKey,
-      title: course.title ?? 'Untitled course',
-      enrolledAt: enrollment.enrolledAt,
-      percent,
+      };
     });
-  }
 
-  const students = [...byStudent.values()].sort((a, b) => {
-    const aLatest = Math.max(...a.enrolledCourses.map((c) => new Date(c.enrolledAt).getTime()));
-    const bLatest = Math.max(...b.enrolledCourses.map((c) => new Date(c.enrolledAt).getTime()));
-    return bLatest - aLatest;
-  });
+  const totalStudents = new Set(rows.map((r) => r.studentId)).size;
+  const activeThisWeek = new Set(
+    rows.filter((r) => new Date(r.lastActive) >= activeSince).map((r) => r.studentId)
+  ).size;
+  const averageProgress =
+    rows.length > 0 ? Math.round(rows.reduce((sum, r) => sum + r.percent, 0) / rows.length) : 0;
+  const completionRate =
+    rows.length > 0 ? Math.round((rows.filter((r) => r.percent === 100).length / rows.length) * 100) : 0;
 
-  return NextResponse.json({ data: students }, { status: 200 });
+  return NextResponse.json(
+    {
+      data: {
+        students: rows,
+        totalStudents,
+        activeThisWeek,
+        averageProgress,
+        completionRate,
+      },
+    },
+    { status: 200 }
+  );
 }
