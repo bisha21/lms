@@ -91,9 +91,7 @@ export async function createCourse(req: Request) {
 export const getAllCourses = async (req: Request) => {
   await createConnection();
   const session = await getServerSession(authOptions);
-  // Super Admin/Admin see every course (draft or published); everyone else — including
-  // Instructor — only sees the published catalog here. Scoping this to "my own drafts"
-  // for instructors is a listing/dashboard change, out of scope for this phase.
+  // Super Admin/Admin see every course (draft or published) regardless of filter.
   const canSeeAllCourses = bypassesOwnership(session?.user?.role);
 
   const { searchParams } = new URL(req.url);
@@ -110,8 +108,13 @@ export const getAllCourses = async (req: Request) => {
   const sortParam = searchParams.get('sort');
   const sort: CourseSortKey = isCourseSortKey(sortParam) ? sortParam : 'newest';
 
+  // An instructor filtering the list down to their own id (e.g. "My Courses" on their
+  // dashboard) sees their own draft + published courses. Anyone filtering by someone
+  // else's instructor id still only sees that instructor's published catalog.
+  const isSelfScoped = !!session?.user?.id && !!instructor && instructor === session.user.id;
+
   const match: Record<string, unknown> = { isDeleted: false };
-  if (!canSeeAllCourses) {
+  if (!canSeeAllCourses && !isSelfScoped) {
     match.status = CourseStatus.PUBLISHED;
   }
   if (category && mongoose.isValidObjectId(category)) {

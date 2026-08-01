@@ -61,5 +61,6 @@ export const queryKeys = {
     students: ['instructor', 'students'] as const,
     revenue: (params?: { range?: string; page?: number; status?: string }) =>
       ['instructor', 'revenue', params ?? {}] as const,
+    announcements: ['instructor', 'announcements'] as const,
   },
 };

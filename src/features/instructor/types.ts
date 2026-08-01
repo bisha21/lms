@@ -78,3 +78,18 @@ export interface IInstructorRevenueParams {
   limit?: number;
   status?: string;
 }
+
+export interface IInstructorAnnouncement {
+  _id: string;
+  title: string;
+  body: string;
+  courseId: string;
+  courseTitle: string;
+  createdAt: string;
+}
+
+export interface ICreateAnnouncementData {
+  course: string;
+  title: string;
+  body: string;
+}

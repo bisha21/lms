@@ -1,7 +1,15 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'react-toastify';
 import { API } from '@/http/http';
 import { queryKeys } from '@/lib/queryKeys';
-import { IInstructorDashboard, IInstructorRevenue, IInstructorRevenueParams, IInstructorStudent } from './types';
+import {
+  ICreateAnnouncementData,
+  IInstructorAnnouncement,
+  IInstructorDashboard,
+  IInstructorRevenue,
+  IInstructorRevenueParams,
+  IInstructorStudent,
+} from './types';
 
 export function useInstructorDashboard(enabled = true) {
   return useQuery({
@@ -33,5 +41,34 @@ export function useInstructorRevenue(params?: IInstructorRevenueParams, enabled 
       return response.data as { data: IInstructorRevenue; meta: { page: number; limit: number; total: number; totalPages: number } };
     },
     enabled,
+  });
+}
+
+export function useInstructorAnnouncements(enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.instructor.announcements,
+    queryFn: async () => {
+      const response = await API.get('/instructor/announcements');
+      return response.data.data as IInstructorAnnouncement[];
+    },
+    enabled,
+  });
+}
+
+export function useCreateAnnouncement() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: ICreateAnnouncementData) => {
+      const response = await API.post('/instructor/announcements', data);
+      return response.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.instructor.announcements });
+      toast.success('Announcement posted');
+    },
+    onError: () => {
+      toast.error('Failed to post announcement');
+    },
   });
 }
