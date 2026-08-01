@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Menu } from 'lucide-react';
 
@@ -10,11 +11,15 @@ import StudentSidebar from '@/_component/sidebar/StudentSidebar';
 
 export default function SiteShell({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
+  const pathname = usePathname();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
-  // Signed-in students get a persistent sidebar instead of the marketing top nav; visitors
-  // (and the brief window while the session is resolving) see the normal marketing layout.
-  if (status === 'authenticated' && session) {
+  // Signed-in students get a persistent sidebar instead of the marketing top nav on app
+  // pages — but the landing page ("/") always keeps the marketing layout, even when
+  // signed in, so it still reads as a landing page rather than jumping into the app.
+  const isLandingPage = pathname === '/';
+
+  if (status === 'authenticated' && session && !isLandingPage) {
     return (
       <div className="flex min-h-screen bg-background md:flex-row">
         <StudentSidebar open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
