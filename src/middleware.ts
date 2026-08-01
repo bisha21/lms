@@ -63,11 +63,23 @@ export async function middleware(req: NextRequest) {
         { status: 403 },
       );
     }
+    // /api/instructor/* — the instructor dashboard, needs instructor:overview for every
+    // method (GET-only today, but same "sensitive by default" treatment as /api/admin).
+    const needsInstructorOverview = pathname.startsWith('/api/instructor');
+    if (needsInstructorOverview && !can(role, 'instructor:overview')) {
+      return NextResponse.json(
+        { message: "You don't have permission to perform this action" },
+        { status: 403 },
+      );
+    }
     // Course/lesson/section mutations: Super Admin, Admin, and Instructor may all attempt
-    // these (ownership is checked server-side); Student may not.
+    // these (ownership is checked server-side); Student may not. GET is exempted for
+    // /api/lessons too now — GET /api/lessons/:id (lesson content) must be reachable by
+    // enrolled students, not just owners; the real enrollment-or-ownership check happens
+    // server-side in getLessonContent().
     const needsCourseManage =
       (req.method !== 'GET' && pathname.startsWith('/api/courses')) ||
-      pathname.startsWith('/api/lessons') || // PATCH/DELETE only — no GET route exists here
+      (req.method !== 'GET' && pathname.startsWith('/api/lessons')) ||
       pathname.startsWith('/api/sections'); // POST/PATCH/DELETE only — no GET route exists here
     if (needsCourseManage && !can(role, 'course:create')) {
       return NextResponse.json(
@@ -79,8 +91,11 @@ export async function middleware(req: NextRequest) {
   }
 
   const isAdminPage = pathname.startsWith('/admin');
+  const isInstructorPage = pathname.startsWith('/instructor');
   const isProtectedPage =
     isAdminPage ||
+    isInstructorPage ||
+    pathname.startsWith('/dashboard') ||
     pathname.startsWith('/my-courses') ||
     pathname.startsWith('/payments') ||
     pathname.startsWith('/cart') ||
@@ -99,12 +114,17 @@ export async function middleware(req: NextRequest) {
   if (isAdminPage && !can(role, 'admin:overview')) {
     return NextResponse.redirect(new URL('/', req.url));
   }
+  if (isInstructorPage && !can(role, 'instructor:overview')) {
+    return NextResponse.redirect(new URL('/', req.url));
+  }
   return NextResponse.next();
 }
 
 export const config = {
   matcher: [
     '/admin/:path*',
+    '/instructor/:path*',
+    '/dashboard/:path*',
     '/my-courses/:path*',
     '/payments/:path*',
     '/cart/:path*',
@@ -112,6 +132,7 @@ export const config = {
     '/checkout/:path*',
     '/courses/:path*/learn',
     '/api/admin/:path*',
+    '/api/instructor/:path*',
     '/api/category/:path*',
     '/api/courses/:path*',
     '/api/lessons/:path*',

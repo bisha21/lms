@@ -50,7 +50,9 @@ describe('wishlist controller', () => {
     expect(response.status).toBe(200);
 
     const wishlist = await Wishlist.findOne({ student: studentId });
-    expect(wishlist?.items.map((id) => id.toString())).toEqual([course._id.toString()]);
+    expect(wishlist?.items.map((id: mongoose.Types.ObjectId) => id.toString())).toEqual([
+      course._id.toString(),
+    ]);
   });
 
   it('rejects wishlisting an already-owned course', async () => {
@@ -88,7 +90,9 @@ describe('wishlist controller', () => {
     expect(wishlist?.items).toHaveLength(0);
 
     const cart = await Cart.findOne({ student: studentId });
-    expect(cart?.items.map((id) => id.toString())).toEqual([course._id.toString()]);
+    expect(cart?.items.map((id: mongoose.Types.ObjectId) => id.toString())).toEqual([
+      course._id.toString(),
+    ]);
   });
 
   it('re-validates on move-to-cart — rejects if the course was bought in the meantime', async () => {

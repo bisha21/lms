@@ -19,6 +19,7 @@ import { createCourseSchema, updateCourseSchema } from '@/lib/validate/course.sc
 import { requireAuth, requirePermission } from '../../../../middleware/auth.middleware';
 import { assertCourseOwnership, ownsCourse } from '@/lib/rbac/ownership';
 import { bypassesOwnership } from '@/lib/rbac/permissions';
+import { uploadImageBuffer, uploadVideoBuffer } from '@/lib/cloudinary';
 
 const COURSE_SORT_KEYS = ['newest', 'price', 'rating', 'popular', 'best-selling'] as const;
 type CourseSortKey = (typeof COURSE_SORT_KEYS)[number];
@@ -69,6 +70,40 @@ function sortBySectionThenOrder<T>(lessons: T[]): T[] {
   });
 }
 
+// Both are called from the course-creation wizard's Basic Info step, before a Course
+// document necessarily exists yet — same "unscoped upload, URL attached on create/update"
+// pattern the public course thumbnail already used, generalized to a real Cloudinary asset
+// instead of a raw URL string.
+export async function uploadCourseThumbnail(req: Request) {
+  await createConnection();
+  await requirePermission('course:create');
+
+  const formData = await req.formData();
+  const file = formData.get('file');
+  if (!(file instanceof File)) {
+    throw new AppError('An image file is required', 400);
+  }
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const { url, publicId } = await uploadImageBuffer(buffer, file.name);
+
+  return NextResponse.json({ data: { url, publicId } }, { status: 201 });
+}
+
+export async function uploadCoursePromoVideo(req: Request) {
+  await createConnection();
+  await requirePermission('course:create');
+
+  const formData = await req.formData();
+  const file = formData.get('file');
+  if (!(file instanceof File)) {
+    throw new AppError('A video file is required', 400);
+  }
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const { url, publicId } = await uploadVideoBuffer(buffer, file.name);
+
+  return NextResponse.json({ data: { url, publicId } }, { status: 201 });
+}
+
 export async function createCourse(req: Request) {
   await createConnection();
   const session = await requirePermission('course:create');
@@ -91,9 +126,7 @@ export async function createCourse(req: Request) {
 export const getAllCourses = async (req: Request) => {
   await createConnection();
   const session = await getServerSession(authOptions);
-  // Super Admin/Admin see every course (draft or published); everyone else — including
-  // Instructor — only sees the published catalog here. Scoping this to "my own drafts"
-  // for instructors is a listing/dashboard change, out of scope for this phase.
+  // Super Admin/Admin see every course (draft or published) regardless of filter.
   const canSeeAllCourses = bypassesOwnership(session?.user?.role);
 
   const { searchParams } = new URL(req.url);
@@ -110,8 +143,13 @@ export const getAllCourses = async (req: Request) => {
   const sortParam = searchParams.get('sort');
   const sort: CourseSortKey = isCourseSortKey(sortParam) ? sortParam : 'newest';
 
+  // An instructor filtering the list down to their own id (e.g. "My Courses" on their
+  // dashboard) sees their own draft + published courses. Anyone filtering by someone
+  // else's instructor id still only sees that instructor's published catalog.
+  const isSelfScoped = !!session?.user?.id && !!instructor && instructor === session.user.id;
+
   const match: Record<string, unknown> = { isDeleted: false };
-  if (!canSeeAllCourses) {
+  if (!canSeeAllCourses && !isSelfScoped) {
     match.status = CourseStatus.PUBLISHED;
   }
   if (category && mongoose.isValidObjectId(category)) {
@@ -337,8 +375,11 @@ export const getCourseLessons = async (id: string) => {
     }
   }
 
-  const lessons = await Lesson.find({ course: id }).populate<{ section: ISection | null }>(
-    'section'
-  );
+  // Lightweight sidebar/navigation projection only — no videoUrl/pdfUrl/description.
+  // GET /api/lessons/:id (lesson.controller.ts::getLessonContent) is the sole source of
+  // actual playable content, and it re-verifies enrollment on every single request.
+  const lessons = await Lesson.find({ course: id })
+    .select('title order durationSeconds contentType section')
+    .populate<{ section: ISection | null }>('section');
   return NextResponse.json({ data: sortBySectionThenOrder(lessons) }, { status: 200 });
 };

@@ -92,6 +92,30 @@ describe('getAllCourses — filters, sorting, pagination', () => {
     expect(body.data[0].title).toBe('By A');
   });
 
+  it('lets an instructor see their own drafts when self-scoping by their own id', async () => {
+    const instructorId = new mongoose.Types.ObjectId().toString();
+    await createPublishedCourse({ title: 'Published', instructor: instructorId, status: 'draft' });
+    mockGetServerSession.mockResolvedValue({ user: { id: instructorId, role: 'instructor' } });
+
+    const response = await getAllCourses(catalogRequest({ instructor: instructorId }));
+    const body = await response.json();
+
+    expect(body.data).toHaveLength(1);
+    expect(body.data[0].title).toBe('Published');
+  });
+
+  it("still hides drafts when instructor filters by someone else's id", async () => {
+    const instructorA = new mongoose.Types.ObjectId().toString();
+    const instructorB = new mongoose.Types.ObjectId().toString();
+    await createPublishedCourse({ title: "B's draft", instructor: instructorB, status: 'draft' });
+    mockGetServerSession.mockResolvedValue({ user: { id: instructorA, role: 'instructor' } });
+
+    const response = await getAllCourses(catalogRequest({ instructor: instructorB }));
+    const body = await response.json();
+
+    expect(body.data).toHaveLength(0);
+  });
+
   it('filters by minimum rating, excluding courses with no reviews', async () => {
     const highRated = await createPublishedCourse({ title: 'High Rated' });
     const lowRated = await createPublishedCourse({ title: 'Low Rated' });

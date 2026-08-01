@@ -1,12 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { signIn } from 'next-auth/react';
+import { getSession, signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'react-toastify';
 import { Button } from '@/components/ui/button';
 import { useRedirectIfAuthed } from '@/hooks/useRedirectIfAuthed';
+import { getRoleHomePath } from '@/lib/getRoleHomePath';
 
 export default function LoginPage() {
   useRedirectIfAuthed();
@@ -19,12 +20,18 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     const result = await signIn('credentials', { redirect: false, email, password });
-    setLoading(false);
     if (result?.error) {
+      setLoading(false);
       toast.error('Invalid email or password');
       return;
     }
-    router.push('/');
+    // signIn(..., { redirect: false }) only returns { error, ok, status, url } — no user
+    // data — so the freshly-issued session (which does carry role, via the jwt/session
+    // callbacks in src/lib/auth.ts) has to be fetched separately to know where to send
+    // this role.
+    const session = await getSession();
+    setLoading(false);
+    router.push(getRoleHomePath(session?.user?.role));
   };
 
   return (
@@ -58,7 +65,7 @@ export default function LoginPage() {
       <Button
         variant="outline"
         className="w-full mt-3"
-        onClick={() => signIn('google', { callbackUrl: '/' })}
+        onClick={() => signIn('google', { callbackUrl: '/login' })}
       >
         Continue with Google
       </Button>

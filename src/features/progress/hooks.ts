@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { API } from '@/http/http';
 import { queryKeys } from '@/lib/queryKeys';
-import { IProgressData } from './types';
+import { IContinueLearningItem, IProgressData } from './types';
 
 export function useProgress(courseId: string, enabled = true) {
   return useQuery({
@@ -11,6 +11,17 @@ export function useProgress(courseId: string, enabled = true) {
       return response.data.data as IProgressData;
     },
     enabled: enabled && !!courseId,
+  });
+}
+
+export function useContinueLearning(enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.progress.continueLearning,
+    queryFn: async () => {
+      const response = await API.get('/progress/continue-learning');
+      return response.data.data as IContinueLearningItem[];
+    },
+    enabled,
   });
 }
 

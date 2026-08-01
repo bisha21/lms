@@ -290,4 +290,29 @@ describe('course controller — flat lesson list is sorted by (section.order, le
       'B2',
     ]);
   });
+
+  it('trims videoUrl/pdfUrl/description from the list — GET /api/lessons/:id is the sole content source', async () => {
+    const course = await createPublishedCourse();
+    const section = await Section.create({ course: course._id, title: 'Section 1', order: 0 });
+    await Lesson.create({
+      course: course._id,
+      section: section._id,
+      title: 'Lesson 1',
+      description: 'secret description',
+      videoUrl: 'https://cdn.example.com/secret.mp4',
+      order: 0,
+    });
+
+    mockGetServerSession.mockResolvedValue({
+      user: { id: course.instructor.toString(), role: 'admin' },
+    });
+
+    const response = await getCourseLessons(course._id.toString());
+    const body = await response.json();
+
+    expect(body.data[0]).not.toHaveProperty('videoUrl');
+    expect(body.data[0]).not.toHaveProperty('pdfUrl');
+    expect(body.data[0]).not.toHaveProperty('description');
+    expect(JSON.stringify(body)).not.toContain('secret.mp4');
+  });
 });

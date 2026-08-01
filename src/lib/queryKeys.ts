@@ -28,6 +28,7 @@ export const queryKeys = {
   },
   lessons: {
     forCourse: (courseId: string) => ['lessons', courseId] as const,
+    content: (lessonId: string) => ['lessons', 'content', lessonId] as const,
   },
   sections: {
     forCourse: (courseId: string) => ['sections', courseId] as const,
@@ -49,8 +50,17 @@ export const queryKeys = {
   },
   progress: {
     forCourse: (courseId: string) => ['progress', courseId] as const,
+    continueLearning: ['progress', 'continue-learning'] as const,
   },
   admin: {
     overview: ['admin', 'overview'] as const,
+    dashboard: ['admin', 'dashboard'] as const,
+  },
+  instructor: {
+    dashboard: ['instructor', 'dashboard'] as const,
+    students: ['instructor', 'students'] as const,
+    revenue: (params?: { range?: string; page?: number; status?: string }) =>
+      ['instructor', 'revenue', params ?? {}] as const,
+    announcements: ['instructor', 'announcements'] as const,
   },
 };

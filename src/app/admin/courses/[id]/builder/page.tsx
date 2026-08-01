@@ -25,13 +25,13 @@ import {
   useReorderLessons,
   useUpdateLesson,
 } from '@/features/lessons/hooks';
-import { ILesson } from '@/features/lessons/types';
+import { ILessonContent, LessonContentTypeValue } from '@/features/lessons/types';
 import { SortableSection } from './SortableSection';
 
 type SectionModalState = { mode: 'add' } | { mode: 'edit'; section: ISection } | null;
 type LessonModalState =
   | { mode: 'add'; sectionId: string }
-  | { mode: 'edit'; sectionId: string; lesson: ILesson }
+  | { mode: 'edit'; sectionId: string; lesson: ILessonContent }
   | null;
 
 export default function CourseBuilderPage() {
@@ -59,8 +59,10 @@ export default function CourseBuilderPage() {
   const [lessonModal, setLessonModal] = useState<LessonModalState>(null);
   const [lessonTitle, setLessonTitle] = useState('');
   const [lessonDescription, setLessonDescription] = useState('');
+  const [lessonContentType, setLessonContentType] = useState<LessonContentTypeValue>('video');
   const [lessonVideo, setLessonVideo] = useState<File | null>(null);
-  const [deletingLesson, setDeletingLesson] = useState<{ section: ISection; lesson: ILesson } | null>(
+  const [lessonPdf, setLessonPdf] = useState<File | null>(null);
+  const [deletingLesson, setDeletingLesson] = useState<{ section: ISection; lesson: ILessonContent } | null>(
     null
   );
 
@@ -98,24 +100,34 @@ export default function CourseBuilderPage() {
   function openAddLesson(sectionId: string) {
     setLessonTitle('');
     setLessonDescription('');
+    setLessonContentType('video');
     setLessonVideo(null);
+    setLessonPdf(null);
     setLessonModal({ mode: 'add', sectionId });
   }
-  function openEditLesson(sectionId: string, lesson: ILesson) {
+  function openEditLesson(sectionId: string, lesson: ILessonContent) {
     setLessonTitle(lesson.title);
     setLessonDescription(lesson.description);
+    setLessonContentType(lesson.contentType);
     setLessonVideo(null);
+    setLessonPdf(null);
     setLessonModal({ mode: 'edit', sectionId, lesson });
   }
   function submitLesson(e: React.FormEvent) {
     e.preventDefault();
     if (!lessonModal) return;
     if (lessonModal.mode === 'add') {
-      if (!lessonVideo) return;
+      if (lessonContentType === 'pdf' ? !lessonPdf : !lessonVideo) return;
       createLesson.mutate(
         {
           sectionId: lessonModal.sectionId,
-          data: { title: lessonTitle, description: lessonDescription, video: lessonVideo },
+          data: {
+            title: lessonTitle,
+            description: lessonDescription,
+            contentType: lessonContentType,
+            video: lessonVideo ?? undefined,
+            pdf: lessonPdf ?? undefined,
+          },
         },
         { onSuccess: () => setLessonModal(null) }
       );
@@ -266,7 +278,7 @@ export default function CourseBuilderPage() {
         onOpenChange={(open) => !open && setLessonModal(null)}
         header={{
           title: lessonModal?.mode === 'edit' ? 'Edit Lesson' : 'Add Lesson',
-          description: 'Upload a lesson video for this section.',
+          description: 'Upload a lesson video or PDF for this section.',
         }}
       >
         <form onSubmit={submitLesson} className="space-y-4">
@@ -289,16 +301,52 @@ export default function CourseBuilderPage() {
             />
           </div>
           {lessonModal?.mode === 'add' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Video file</label>
-              <input
-                type="file"
-                accept="video/*"
-                required
-                onChange={(e) => setLessonVideo(e.target.files?.[0] ?? null)}
-                className="w-full mt-1"
-              />
-            </div>
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Content type</label>
+                <div className="flex gap-4 text-sm text-gray-700">
+                  <label className="flex items-center gap-1">
+                    <input
+                      type="radio"
+                      checked={lessonContentType === 'video'}
+                      onChange={() => setLessonContentType('video')}
+                    />
+                    Video
+                  </label>
+                  <label className="flex items-center gap-1">
+                    <input
+                      type="radio"
+                      checked={lessonContentType === 'pdf'}
+                      onChange={() => setLessonContentType('pdf')}
+                    />
+                    PDF
+                  </label>
+                </div>
+              </div>
+              {lessonContentType === 'video' ? (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Video file</label>
+                  <input
+                    type="file"
+                    accept="video/*"
+                    required
+                    onChange={(e) => setLessonVideo(e.target.files?.[0] ?? null)}
+                    className="w-full mt-1"
+                  />
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">PDF file</label>
+                  <input
+                    type="file"
+                    accept="application/pdf"
+                    required
+                    onChange={(e) => setLessonPdf(e.target.files?.[0] ?? null)}
+                    className="w-full mt-1"
+                  />
+                </div>
+              )}
+            </>
           )}
           <Button type="submit" className="w-full">
             {lessonModal?.mode === 'edit' ? 'Save changes' : 'Upload lesson'}

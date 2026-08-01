@@ -15,9 +15,13 @@ export enum CourseLevel {
 interface Course extends Document {
   title: string;
   slug: string;
+  subtitle?: string;
   courseDescription: string;
   coursePrice: number;
   thumbnail?: string;
+  thumbnailPublicId?: string;
+  promoVideoUrl?: string;
+  promoVideoPublicId?: string;
   duration: string;
   category: mongoose.Types.ObjectId;
   instructor: mongoose.Types.ObjectId;
@@ -38,6 +42,9 @@ const courseSchema = new Schema({
     type: String,
     unique: true,
   },
+  subtitle: {
+    type: String,
+  },
   courseDescription: {
     type: String,
     required: true,
@@ -47,6 +54,15 @@ const courseSchema = new Schema({
     default: 0,
   },
   thumbnail: {
+    type: String,
+  },
+  thumbnailPublicId: {
+    type: String,
+  },
+  promoVideoUrl: {
+    type: String,
+  },
+  promoVideoPublicId: {
     type: String,
   },
   duration: {

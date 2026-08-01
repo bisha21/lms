@@ -12,7 +12,12 @@ vi.mock('@/lib/cloudinary', () => ({
     url: 'https://cdn.example.com/video.mp4',
     publicId: 'pub123',
   }),
+  uploadRawBuffer: vi.fn().mockResolvedValue({
+    url: 'https://cdn.example.com/lesson.pdf',
+    publicId: 'pdf123',
+  }),
   destroyVideo: vi.fn().mockResolvedValue(undefined),
+  destroyRaw: vi.fn().mockResolvedValue(undefined),
 }));
 
 const { createLessonForSection, updateLesson, deleteLesson, reorderLessonsInSection } =
@@ -40,6 +45,18 @@ function multipartRequest(fields: Record<string, string>) {
     formData.append(key, value);
   }
   formData.append('video', new File([Buffer.from('fake-video')], 'video.mp4', { type: 'video/mp4' }));
+  return new Request('http://localhost/api/sections/x/lessons', { method: 'POST', body: formData });
+}
+
+function pdfMultipartRequest(fields: Record<string, string>, omitFile = false) {
+  const formData = new FormData();
+  for (const [key, value] of Object.entries(fields)) {
+    formData.append(key, value);
+  }
+  formData.append('contentType', 'pdf');
+  if (!omitFile) {
+    formData.append('pdf', new File([Buffer.from('fake-pdf')], 'slides.pdf', { type: 'application/pdf' }));
+  }
   return new Request('http://localhost/api/sections/x/lessons', { method: 'POST', body: formData });
 }
 
@@ -179,5 +196,81 @@ describe('lesson controller — role & ownership matrix', () => {
 
     const reordered = await Lesson.find({ section: section._id }).sort('order');
     expect(reordered.map((lesson) => lesson.title)).toEqual(['B', 'A']);
+  });
+});
+
+describe('lesson controller — PDF authoring', () => {
+  beforeEach(async () => {
+    await createConnection();
+  });
+
+  it('creates a PDF lesson via uploadRawBuffer', async () => {
+    const instructorId = new mongoose.Types.ObjectId().toString();
+    const course = await createCourseOwnedBy(instructorId);
+    const section = await createSectionFor(course._id.toString());
+    mockGetServerSession.mockResolvedValue({ user: { id: instructorId, role: 'instructor' } });
+
+    const response = await createLessonForSection(
+      pdfMultipartRequest({ title: 'Slide deck', description: 'desc' }),
+      section._id.toString(),
+    );
+    expect(response.status).toBe(201);
+
+    const lesson = await Lesson.findOne({ section: section._id });
+    expect(lesson?.contentType).toBe('pdf');
+    expect(lesson?.pdfUrl).toBe('https://cdn.example.com/lesson.pdf');
+    expect(lesson?.pdfPublicId).toBe('pdf123');
+    expect(lesson?.videoUrl).toBeUndefined();
+  });
+
+  it('rejects a PDF-typed lesson with no pdf file attached', async () => {
+    const instructorId = new mongoose.Types.ObjectId().toString();
+    const course = await createCourseOwnedBy(instructorId);
+    const section = await createSectionFor(course._id.toString());
+    mockGetServerSession.mockResolvedValue({ user: { id: instructorId, role: 'instructor' } });
+
+    await expect(
+      createLessonForSection(
+        pdfMultipartRequest({ title: 'Slide deck', description: 'desc' }, true),
+        section._id.toString(),
+      ),
+    ).rejects.toMatchObject({ statusCode: 400 });
+  });
+
+  it('defaults to video content type when none is specified (backward compatible)', async () => {
+    const instructorId = new mongoose.Types.ObjectId().toString();
+    const course = await createCourseOwnedBy(instructorId);
+    const section = await createSectionFor(course._id.toString());
+    mockGetServerSession.mockResolvedValue({ user: { id: instructorId, role: 'instructor' } });
+
+    const response = await createLessonForSection(
+      multipartRequest({ title: 'Regular lesson', description: 'desc' }),
+      section._id.toString(),
+    );
+    const body = await response.json();
+    expect(body.data.contentType).toBe('video');
+  });
+
+  it('cleans up the PDF asset (destroyRaw) on delete', async () => {
+    const instructorId = new mongoose.Types.ObjectId().toString();
+    const course = await createCourseOwnedBy(instructorId);
+    const section = await createSectionFor(course._id.toString());
+    const lesson = await Lesson.create({
+      course: course._id,
+      section: section._id,
+      title: 'Slide deck',
+      description: 'desc',
+      contentType: 'pdf',
+      pdfUrl: 'https://cdn.example.com/lesson.pdf',
+      pdfPublicId: 'pdf123',
+      order: 0,
+    });
+    mockGetServerSession.mockResolvedValue({ user: { id: instructorId, role: 'instructor' } });
+
+    const { destroyRaw } = await import('@/lib/cloudinary');
+    const response = await deleteLesson(lesson._id.toString());
+
+    expect(response.status).toBe(200);
+    expect(destroyRaw).toHaveBeenCalledWith('pdf123');
   });
 });

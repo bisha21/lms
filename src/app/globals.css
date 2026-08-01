@@ -8,57 +8,116 @@ body {
 
 @layer base {
   :root {
+    /* Udemy-inspired: near-black CTAs, signature purple accent, warm gold ratings */
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 220 5% 12%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 220 5% 12%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --popover-foreground: 220 5% 12%;
+    --primary: 220 5% 12%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 9% 95%;
+    --secondary-foreground: 220 5% 12%;
+    --muted: 220 9% 95%;
+    --muted-foreground: 207 4% 43%;
+    --accent: 220 9% 95%;
+    --accent-foreground: 220 5% 12%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 207 14% 84%;
+    --input: 207 14% 84%;
+    --ring: 276 86% 57%;
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
+
+    /* Brand accent — Udemy purple, used for logo/links/labels/focus, not buttons */
+    --brand: 276 86% 57%;
+    --brand-foreground: 0 0% 100%;
+
+    /* Semantic status colors */
+    --success: 152 69% 31%;
+    --success-soft: 152 69% 95%;
+    --warning: 32 95% 44%;
+    --warning-soft: 38 92% 95%;
+    --destructive-soft: 0 86% 97%;
+
+    /* Single-purpose accent colors */
+    --rating: 37 80% 50%;
+    --wishlist: 346 77% 55%;
+
+    /* Rotating accent palette for category/stat icons (bg + soft-bg pairs) */
+    --palette-1: 276 86% 57%;
+    --palette-1-soft: 276 86% 96%;
+    --palette-2: 220 5% 20%;
+    --palette-2-soft: 220 8% 94%;
+    --palette-3: 37 80% 50%;
+    --palette-3-soft: 37 80% 95%;
+    --palette-4: 262 45% 35%;
+    --palette-4-soft: 262 45% 95%;
+    --palette-5: 207 10% 45%;
+    --palette-5-soft: 207 10% 95%;
+    --palette-6: 276 55% 75%;
+    --palette-6-soft: 276 55% 96%;
   }
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --background: 220 6% 10%;
+    --foreground: 0 0% 96%;
+    --card: 220 6% 13%;
+    --card-foreground: 0 0% 96%;
+    --popover: 220 6% 13%;
+    --popover-foreground: 0 0% 96%;
+    --primary: 276 70% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 6% 18%;
+    --secondary-foreground: 0 0% 96%;
+    --muted: 220 6% 18%;
+    --muted-foreground: 207 8% 65%;
+    --accent: 220 6% 18%;
+    --accent-foreground: 0 0% 96%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --border: 220 8% 22%;
+    --input: 220 8% 22%;
+    --ring: 276 80% 65%;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+
+    /* Brand accent — Udemy purple, used for logo/links/labels/focus, not buttons */
+    --brand: 276 80% 65%;
+    --brand-foreground: 0 0% 100%;
+
+    /* Semantic status colors */
+    --success: 152 60% 45%;
+    --success-soft: 152 40% 18%;
+    --warning: 38 92% 55%;
+    --warning-soft: 38 60% 18%;
+    --destructive-soft: 0 40% 20%;
+
+    /* Single-purpose accent colors */
+    --rating: 37 85% 60%;
+    --wishlist: 346 77% 60%;
+
+    /* Rotating accent palette for category/stat icons (bg + soft-bg pairs) */
+    --palette-1: 276 80% 65%;
+    --palette-1-soft: 276 45% 22%;
+    --palette-2: 220 8% 75%;
+    --palette-2-soft: 220 8% 20%;
+    --palette-3: 37 85% 60%;
+    --palette-3-soft: 37 50% 18%;
+    --palette-4: 262 55% 68%;
+    --palette-4-soft: 262 40% 22%;
+    --palette-5: 207 10% 65%;
+    --palette-5-soft: 207 10% 20%;
+    --palette-6: 276 55% 78%;
+    --palette-6-soft: 276 35% 20%;
   }
 }
 

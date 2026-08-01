@@ -1,13 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { signIn } from 'next-auth/react';
+import { getSession, signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'react-toastify';
 import { API } from '@/http/http';
 import { Button } from '@/components/ui/button';
 import { useRedirectIfAuthed } from '@/hooks/useRedirectIfAuthed';
+import { getRoleHomePath } from '@/lib/getRoleHomePath';
 
 export default function RegisterPage() {
   useRedirectIfAuthed();
@@ -28,7 +29,8 @@ export default function RegisterPage() {
         router.push('/login');
         return;
       }
-      router.push('/');
+      const session = await getSession();
+      router.push(getRoleHomePath(session?.user?.role));
     } catch (error: unknown) {
       const message =
         (error as { response?: { data?: { message?: string } } })?.response?.data?.message ??

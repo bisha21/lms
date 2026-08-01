@@ -22,7 +22,7 @@ export const POST = withErrorHandling(async (req: Request) => {
 
   const user = await User.create({ username, email, password });
   return NextResponse.json(
-    { message: 'Account created', data: { id: user._id, email: user.email } },
+    { message: 'Account created', data: { id: user._id, email: user.email, role: user.role } },
     { status: 201 }
   );
 });

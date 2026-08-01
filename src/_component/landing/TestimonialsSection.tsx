@@ -1,0 +1,59 @@
+import SectionHeading from '@/_component/SectionHeading';
+import RatingStars from '@/_component/RatingStars';
+import { Stagger, StaggerItem } from '@/_component/motion/Stagger';
+
+const TESTIMONIALS = [
+  {
+    initials: 'AR',
+    name: 'Aisha R.',
+    role: 'Frontend Developer',
+    quote:
+      'The course quality is outstanding. Each lesson is structured logically and the instructors explain complex topics in a way that actually sticks.',
+    color: 'bg-palette-1-soft text-palette-1',
+  },
+  {
+    initials: 'MK',
+    name: 'Marcus K.',
+    role: 'Product Designer',
+    quote:
+      'Beautifully designed platform. The courses are practical, project-based, and helped me land freelance work within weeks.',
+    color: 'bg-palette-3-soft text-palette-3',
+  },
+  {
+    initials: 'TN',
+    name: 'Tara N.',
+    role: 'Data Analyst',
+    quote:
+      'I love how self-paced everything is. The dashboards keep me motivated and I can actually see my progress add up over time.',
+    color: 'bg-palette-2-soft text-palette-2',
+  },
+];
+
+export default function TestimonialsSection() {
+  return (
+    <section className="mx-auto max-w-6xl px-6 py-10">
+      <SectionHeading title="Loved by learners worldwide" subtitle="Real feedback from our student community" />
+      <Stagger className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {TESTIMONIALS.map((t) => (
+          <StaggerItem key={t.name}>
+            <div className="flex h-full flex-col gap-4 rounded-xl border border-border bg-card p-5 transition-shadow hover:shadow-md">
+              <RatingStars rating={5} />
+              <p className="text-sm text-muted-foreground">&ldquo;{t.quote}&rdquo;</p>
+              <div className="mt-auto flex items-center gap-3">
+                <div
+                  className={`flex h-9 w-9 items-center justify-center rounded-full text-xs font-semibold ${t.color}`}
+                >
+                  {t.initials}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">{t.name}</p>
+                  <p className="text-xs text-muted-foreground">{t.role}</p>
+                </div>
+              </div>
+            </div>
+          </StaggerItem>
+        ))}
+      </Stagger>
+    </section>
+  );
+}
